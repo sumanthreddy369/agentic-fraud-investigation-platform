@@ -1,0 +1,19 @@
+name: risk-investigation
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: risk_platform
+      POSTGRES_USER: risk_local
+      POSTGRES_PASSWORD: risk_local
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - risk_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risk_local -d risk_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  risk_postgres:
