@@ -14,6 +14,14 @@ An additive investigation layer for the existing AWS Risk Portfolio. The origina
 
 This is a local foundation, not a completed agentic platform. LangGraph, MCP, Qdrant, Azure OpenAI, OIDC/MSAL, document ETL, and human review screens remain future increments in [the plan](AGENTIC_FRAUD_PLATFORM_PLAN.md). Swagger `/docs` is the initial API exploration interface. There is no review/approval endpoint yet.
 
+## Guardrails and showcase
+
+The guardrail increment adds role/domain restrictions, bounded requests, throttling, safe errors, security headers, model timeouts/circuit breaking, database deadlines and operational disable switches. Authenticated `GET /v1/guardrails` exposes a safe control inventory.
+
+[Guardrail matrix and demo guide](docs/GUARDRAILS.md) lists what is enforced, what is a tested agent-policy library, and what requires enterprise infrastructure. Run `uv run python scripts/demo_guardrails.py` for a synthetic demonstration without a running database or cloud credentials. See [captured demo results](docs/GUARDRAIL_DEMO_REPORT.json).
+
+The agent policy library does not yet connect to LangGraph/MCP/Azure. Human-review packets cannot execute actions; an actual durable analyst approval workflow remains pending.
+
 ## Local setup (PowerShell)
 
 Requires Python 3.11-3.13, uv, and Docker with Linux containers, or a separately configured PostgreSQL 16/17 instance. Use a dedicated **new database**, never an existing portfolio database.

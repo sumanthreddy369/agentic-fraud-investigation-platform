@@ -1,0 +1,104 @@
+{
+  "synthetic_demo": true,
+  "external_calls": false,
+  "enterprise_ready": false,
+  "passed": true,
+  "checks": [
+    {
+      "name": "missing_authentication",
+      "layer": "live_api",
+      "expected_status": 401,
+      "actual_status": 401,
+      "passed": true
+    },
+    {
+      "name": "authenticated_control_inventory",
+      "layer": "live_api",
+      "expected_status": 200,
+      "actual_status": 200,
+      "passed": true
+    },
+    {
+      "name": "auditor_cannot_create_case",
+      "layer": "live_api",
+      "expected_status": 403,
+      "actual_status": 403,
+      "passed": true
+    },
+    {
+      "name": "case_write_kill_switch",
+      "layer": "live_api",
+      "expected_status": 503,
+      "actual_status": 503,
+      "passed": true
+    },
+    {
+      "name": "oversized_body",
+      "layer": "live_api",
+      "expected_status": 413,
+      "actual_status": 413,
+      "passed": true
+    },
+    {
+      "name": "untrusted_host",
+      "layer": "live_api",
+      "expected_status": 400,
+      "actual_status": 400,
+      "passed": true
+    },
+    {
+      "name": "unauthorized_scoring_domain",
+      "layer": "live_api",
+      "expected_status": 403,
+      "actual_status": 403,
+      "passed": true
+    },
+    {
+      "name": "unverified_model",
+      "layer": "live_api",
+      "expected_status": 503,
+      "actual_status": 503,
+      "passed": true
+    },
+    {
+      "name": "scoring_kill_switch",
+      "layer": "live_api",
+      "expected_status": 503,
+      "actual_status": 503,
+      "passed": true
+    },
+    {
+      "name": "rate_limit",
+      "layer": "live_api",
+      "expected_status": 429,
+      "actual_status": 429,
+      "passed": true
+    },
+    {
+      "name": "autonomous_business_action",
+      "layer": "policy_library_not_agent_runtime",
+      "expected_code": "tool_not_allowed",
+      "actual_code": "tool_not_allowed",
+      "passed": true
+    },
+    {
+      "name": "unapproved_external_ai",
+      "layer": "policy_library_not_agent_runtime",
+      "expected_code": "external_ai_disabled",
+      "actual_code": "external_ai_disabled",
+      "passed": true
+    },
+    {
+      "name": "fabricated_citation",
+      "layer": "policy_library_not_agent_runtime",
+      "expected_code": "unknown_citation",
+      "actual_code": "unknown_citation",
+      "passed": true
+    },
+    {
+      "name": "abstention_still_requires_human_review",
+      "layer": "policy_library_not_agent_runtime",
+      "passed": true
+    }
+  ]
+}

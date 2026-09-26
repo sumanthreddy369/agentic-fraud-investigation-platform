@@ -6,8 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from risk_platform.contracts import CaseCreate
+from risk_platform.contracts import CaseCreate, Domain
 from risk_platform.database import AuditEvent, Case
+
+
+class DomainDenied(Exception):
+    pass
 
 
 class IdempotencyConflict(Exception):
@@ -15,11 +19,14 @@ class IdempotencyConflict(Exception):
 
 
 class CaseService:
-    def __init__(self, session: AsyncSession, actor_id: str):
+    def __init__(self, session: AsyncSession, actor_id: str, domains: set[str] | None = None):
         self.session = session
         self.actor_id = actor_id
+        self.domains = frozenset(Domain if domains is None else domains)
 
     async def create(self, request: CaseCreate, key: str) -> tuple[Case, bool]:
+        if request.domain not in self.domains:
+            raise DomainDenied()
         payload = request.model_dump(mode="json")
         fingerprint = hashlib.sha256(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
@@ -55,24 +62,30 @@ class CaseService:
 
     async def get(self, case_id: UUID) -> Case | None:
         return await self.session.scalar(
-            select(Case).where(Case.id == case_id, Case.owner_id == self.actor_id)
+            select(Case).where(
+                Case.id == case_id, Case.owner_id == self.actor_id, Case.domain.in_(self.domains)
+            )
         )
 
     async def list_cases(self, limit: int, offset: int) -> list[Case]:
         result = await self.session.scalars(
             select(Case)
-            .where(Case.owner_id == self.actor_id)
+            .where(Case.owner_id == self.actor_id, Case.domain.in_(self.domains))
             .order_by(Case.created_at.desc(), Case.id)
             .limit(limit)
             .offset(offset)
         )
         return list(result)
 
-    async def audit(self, case_id: UUID) -> list[AuditEvent]:
+    async def audit(self, case_id: UUID, limit: int = 100, offset: int = 0) -> list[AuditEvent]:
         result = await self.session.scalars(
             select(AuditEvent)
             .join(Case, AuditEvent.case_id == Case.id)
-            .where(Case.id == case_id, Case.owner_id == self.actor_id)
+            .where(
+                Case.id == case_id, Case.owner_id == self.actor_id, Case.domain.in_(self.domains)
+            )
             .order_by(AuditEvent.created_at, AuditEvent.id)
+            .limit(limit)
+            .offset(offset)
         )
         return list(result)

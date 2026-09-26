@@ -3,7 +3,16 @@ from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt
+
+FeatureName = Annotated[str, Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_.-]+$")]
+FeatureValue = (
+    Annotated[StrictFloat, Field(allow_inf_nan=False)]
+    | StrictInt
+    | StrictBool
+    | Annotated[str, Field(max_length=1024)]
+    | None
+)
 
 NonEmpty = Annotated[str, Field(min_length=1, max_length=500, pattern=r"\S")]
 
@@ -52,7 +61,7 @@ class ScoreRequest(Contract):
     input_schema_version: NonEmpty
     # The adapter must validate domain-specific features once their contract is recovered.
     # This layer deliberately does not guess training-time features or preprocessing.
-    features: dict[str, float | str | bool | None]
+    features: Annotated[dict[FeatureName, FeatureValue], Field(max_length=512)]
 
 
 class ScoreResult(Contract):

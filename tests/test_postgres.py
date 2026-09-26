@@ -41,6 +41,11 @@ async def test_migration_round_trip_and_concurrent_idempotency(postgres_url):
         assert sum(created for _, created in results) == 1
         async with engine.connect() as connection:
             assert await connection.scalar(text("SELECT count(*) FROM audit_events")) == 1
+            assert await connection.scalar(text("SHOW statement_timeout")) == "5s"
+            assert await connection.scalar(text("SHOW lock_timeout")) == "1s"
+            assert (
+                await connection.scalar(text("SHOW idle_in_transaction_session_timeout")) == "10s"
+            )
         for statement in (
             "UPDATE audit_events SET actor_id = 'tampered'",
             "DELETE FROM audit_events",

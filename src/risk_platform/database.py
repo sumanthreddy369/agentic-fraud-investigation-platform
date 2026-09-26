@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint, Uuid
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
@@ -72,7 +73,12 @@ def make_engine(url: str) -> AsyncEngine:
         pool_size=5,
         max_overflow=5,
         pool_timeout=10,
-        connect_args={"connect_timeout": 5},
+        connect_args={
+            "connect_timeout": 5,
+            "options": str(make_url(url).query.get("options", ""))
+            + " -c statement_timeout=5000 -c lock_timeout=1000"
+            " -c idle_in_transaction_session_timeout=10000",
+        },
     )
 
 

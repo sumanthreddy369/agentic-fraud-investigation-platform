@@ -21,3 +21,13 @@ GitHub Actions has been authored but has not run remotely. No application or dat
 - Chosen GitHub repository destination (this workspace has no remote).
 
 Phase 1 is partial: real model adapters, score provenance persistence, enterprise identity, and investigator UI are not yet implemented. LangGraph, MCP, Qdrant, Azure OpenAI, retrieval/ETL, and human review are subsequent increments. Do not label this foundation as a completed agentic platform.
+
+## Increment 2 — guardrails
+
+Implemented live API controls for server-configured roles and domains, bounded request bodies/headers, slow-body deadlines, per-peer throttling, concurrency limits, trusted hosts, sanitized errors, safe structured event logging, security headers, bounded audit pagination, database deadlines, model output validation, scoring timeouts/circuit breaking, and write/scoring disable switches.
+
+Added a separately tested agent-policy library: read-only tool allowlist, trusted case context, scoped evidence, execution/evidence budgets, default-deny external-AI payload preparation, evidence classification/approval checks, citation validation, abstention, and mandatory human-review packets. These policies are not yet connected to LangGraph, MCP or Azure; there is no autonomous business-action executor or durable review workflow.
+
+Verification completed: **62 tests passed** on Python 3.11.9 using a disposable PostgreSQL 17.4 cluster. **14 synthetic showcase checks passed**. Ruff lint/format and Bandit static analysis passed. The saved pip-audit report found no known vulnerabilities in the 23 locked runtime dependencies checked on 2026-09-25; this is a point-in-time advisory check, not proof of security. The temporary database was stopped and removed.
+
+See `GUARDRAILS.md` for the implemented/policy-only/deployment-required control matrix, `GUARDRAIL_DEMO_REPORT.json` for showcase evidence, and `DEPENDENCY_AUDIT.json` for the dependency report. CI now includes the showcase and security-scanning gates; remote execution remains unverified until publication.
