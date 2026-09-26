@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "risk-investigation-platform"
-version = "0.2.0"
+version = "0.3.0"
 description = "Additive investigation services for the AWS Risk Portfolio"
 requires-python = ">=3.11,<3.14"
 dependencies = [
@@ -15,6 +15,17 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0.38,<2.1",
   "psycopg[binary]>=3.2,<4",
   "alembic>=1.14,<2",
+]
+
+[project.optional-dependencies]
+onnx-cpu = [
+  "numpy>=1.26,<3",
+  "onnxruntime>=1.20,<2",
+]
+onnx-openvino = [
+  "numpy>=1.26,<3",
+  "onnxruntime-openvino==1.24.1",
+  "openvino==2025.4.1",
 ]
 
 [project.scripts]
@@ -29,6 +40,16 @@ dev = [
     "ruff>=0.11,<1",
     "bandit>=1.8,<2",
     "pip-audit>=2.9,<3",
+    "numpy>=1.26,<3",
+    "onnx>=1.16,<2",
+]
+
+[tool.uv]
+conflicts = [
+  [
+    { extra = "onnx-cpu" },
+    { extra = "onnx-openvino" },
+  ],
 ]
 
 [tool.hatch.build.targets.wheel]

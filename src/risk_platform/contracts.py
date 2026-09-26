@@ -55,6 +55,8 @@ class ModelAvailability(Contract):
     domain: Domain
     available: bool
     reason: str
+    backend: str | None = None
+    model_version: str | None = None
 
 
 class ScoreRequest(Contract):

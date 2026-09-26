@@ -28,6 +28,7 @@ from risk_platform.contracts import (
 from risk_platform.control_catalog import control_catalog
 from risk_platform.database import make_engine, make_sessions
 from risk_platform.http_guardrails import GuardrailMiddleware
+from risk_platform.onnx_adapter import load_onnx_adapters
 from risk_platform.scoring import ScoringFailure, ScoringGateway
 from risk_platform.service import CaseService, DomainDenied, IdempotencyConflict
 
@@ -88,7 +89,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if configuration.docs_enabled else None,
     )
     app.state.settings = configuration
-    app.state.models = ModelRegistry()
+    app.state.models = ModelRegistry(load_onnx_adapters(configuration.onnx_manifests))
 
     app.state.scoring = ScoringGateway(app.state.models, configuration)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=configuration.allowed_hosts)

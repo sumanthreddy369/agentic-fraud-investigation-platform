@@ -31,10 +31,11 @@ class UnavailableAdapter:
 
 
 class ModelRegistry:
-    def __init__(self) -> None:
+    def __init__(self, configured: dict[Domain, ModelAdapter] | None = None) -> None:
         self._adapters: dict[Domain, ModelAdapter] = {
             domain: UnavailableAdapter(domain) for domain in Domain
         }
+        self._adapters.update(configured or {})
 
     def get(self, domain: Domain) -> ModelAdapter:
         return self._adapters[domain]

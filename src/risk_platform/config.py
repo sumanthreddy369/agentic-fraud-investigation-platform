@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
@@ -14,6 +15,7 @@ class Settings(BaseSettings):
     operator_id: str = Field(default="local-investigator", min_length=1, max_length=200)
     operator_role: Literal["investigator", "reviewer", "auditor"] = "investigator"
     allowed_domains: set[str] = {"ieee_cis", "home_credit", "elliptic"}
+    onnx_manifests: dict[str, Path] = {}
     max_body_bytes: int = Field(default=65536, ge=1024, le=1048576)
     max_header_bytes: int = Field(default=16384, ge=1024, le=65536)
     body_timeout_seconds: float = Field(default=5, gt=0, le=30)
@@ -42,6 +44,13 @@ class Settings(BaseSettings):
     def known_domains(cls, value: set[str]) -> set[str]:
         if not value <= {"ieee_cis", "home_credit", "elliptic"}:
             raise ValueError("Unknown allowed domain")
+        return value
+
+    @field_validator("onnx_manifests")
+    @classmethod
+    def known_manifest_domains(cls, value: dict[str, Path]) -> dict[str, Path]:
+        if not set(value) <= {"ieee_cis", "home_credit", "elliptic"}:
+            raise ValueError("Unknown ONNX manifest domain")
         return value
 
     @field_validator("allowed_hosts")

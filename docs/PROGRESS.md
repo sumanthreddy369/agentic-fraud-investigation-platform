@@ -34,3 +34,11 @@ See `GUARDRAILS.md` for the implemented/policy-only/deployment-required control 
 ## Source publication
 
 Public destination: [agentic-fraud-investigation-platform](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform). The published source includes the implementation plan, API foundation, guardrails, tests, documentation and saved verification reports. It excludes local environments, credentials, test database files and the original model/dataset artifacts. Source publication does not deploy the application or provision cloud infrastructure.
+
+## Increment 3 — portable inference boundary
+
+Added an optional checksum-pinned ONNX Runtime adapter supporting CPU, CUDA, and OpenVINO execution providers. The adapter enforces exact feature sets/order, input schema version, tensor names, provider activation, model/domain/version metadata, and finite probability output through the existing scoring guardrails. CPU and OpenVINO installation extras are mutually exclusive.
+
+No source model was converted and no model was enabled. Production acceptance still requires authoritative artifacts, golden source-vs-ONNX parity, business-metric regression tests, target-hardware benchmarks, and model governance approval.
+
+Verification completed on Python 3.11.9: **80 tests passed** with a disposable PostgreSQL 17.4 cluster. The suite executed a generated ONNX graph through both ONNX Runtime CPU and the pinned OpenVINO execution provider. Ruff, Bandit, and the 14-check guardrail demo passed. Point-in-time advisory audits found no known vulnerabilities in either locked inference dependency set.

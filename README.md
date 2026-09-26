@@ -24,6 +24,12 @@ The guardrail increment adds role/domain restrictions, bounded requests, throttl
 
 The agent policy library does not yet connect to LangGraph/MCP/Azure. Human-review packets cannot execute actions; an actual durable analyst approval workflow remains pending.
 
+## Optional accelerated inference
+
+The platform now includes a fail-closed ONNX Runtime adapter with CPU, CUDA, and OpenVINO execution-provider support. It verifies the model checksum, provider activation, feature order, schema version, tensor names, output shape, and probability contract. See the [ONNX/OpenVINO guide](docs/ONNX_INFERENCE.md).
+
+No real risk model is configured or converted yet because the authoritative artifacts and preprocessing contracts are still missing. Installing an inference runtime alone does not make a model available.
+
 ## Local setup (PowerShell)
 
 Requires Python 3.11-3.13, uv, and Docker with Linux containers, or a separately configured PostgreSQL 16/17 instance. Use a dedicated **new database**, never an existing portfolio database.
