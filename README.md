@@ -1,5 +1,7 @@
 # Risk Investigation Platform
 
+[Public GitHub repository](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform) | [CI checks](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform/actions)
+
 An additive investigation layer for the existing AWS Risk Portfolio. The original IEEE-CIS, Home Credit, and Elliptic components are not copied, retrained, or modified by this service.
 
 ## Implemented in increment 1
@@ -87,6 +89,6 @@ This starts a temporary password-protected cluster on loopback and a dynamically
 
 The inspected GitHub repositories contain example code and documented results, but no committed saved models or datasets. See [baseline inventory](docs/BASELINE_INVENTORY.md). Before any real scoring adapter can be enabled, recover the authoritative model, preprocessing, class mapping, feature order, dependency versions, and golden inference fixtures. No existing model environment should be upgraded to match this service.
 
-Pending inputs: authoritative portfolio checkout/artifact locations, AWS inference contracts, and the GitHub destination for this branch. GitHub publication is still pending; no remote has been selected.
+Pending inputs: authoritative portfolio checkout/artifact locations and AWS inference contracts. The source, plan, tests, and guardrail demonstration are published in the public repository linked above. Real datasets, model binaries, secrets, and local runtime files are not part of this repository.
 
 The next increment should connect one verified scoring adapter and persist its provenance. Then add evidence retrieval and durable LangGraph review workflows. Missing models must remain visibly unavailable throughout.
