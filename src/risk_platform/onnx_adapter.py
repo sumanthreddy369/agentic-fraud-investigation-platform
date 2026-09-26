@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Annotated, Any, Literal, Protocol
@@ -81,7 +82,7 @@ def sha256_file(path: Path) -> str:
 
 
 def default_session_factory(model_path: Path, providers: list[str]) -> SessionLike:
-    if "OpenVINOExecutionProvider" in providers:
+    if "OpenVINOExecutionProvider" in providers and sys.platform == "win32":
         try:
             # On Windows, importing the wheel registers its native DLL directories.
             import openvino  # noqa: F401

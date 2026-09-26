@@ -25,7 +25,7 @@ onnx-cpu = [
 onnx-openvino = [
   "numpy>=1.26,<3",
   "onnxruntime-openvino==1.24.1",
-  "openvino==2025.4.1",
+  "openvino==2025.4.1; sys_platform == 'win32'",
 ]
 
 [project.scripts]

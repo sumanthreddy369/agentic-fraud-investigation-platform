@@ -24,7 +24,7 @@ uv sync --extra onnx-cpu --python 3.11
 uv sync --extra onnx-openvino --python 3.11
 ```
 
-The OpenVINO extra pins a documented compatible pair: ONNX Runtime OpenVINO 1.24.1 and OpenVINO 2025.4.1. Upgrade them together only after checking the provider compatibility table and rerunning parity and hardware tests.
+The OpenVINO extra pins a documented compatible pair: ONNX Runtime OpenVINO 1.24.1 and OpenVINO 2025.4.1. On Windows, the companion OpenVINO wheel is installed and imported to register its native DLL directories. On Linux, the ONNX Runtime OpenVINO wheel supplies its matching provider libraries; preloading a second OpenVINO runtime can cause an ABI conflict. Upgrade the pair together only after checking the provider compatibility table and rerunning parity and hardware tests.
 
 CUDA deployments should use a separately locked environment containing the official GPU runtime compatible with the deployment CUDA/cuDNN versions. Do not install multiple ONNX Runtime distributions into one environment.
 
