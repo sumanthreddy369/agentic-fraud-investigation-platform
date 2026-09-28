@@ -4,14 +4,49 @@
 
 An additive investigation layer for the existing AWS Risk Portfolio. The original IEEE-CIS, Home Credit, and Elliptic components are not copied, retrained, or modified by this service.
 
-## Implemented in increment 1
+## Platform flow
+
+```mermaid
+flowchart TD
+    Sources[Transactions / Accounts / Devices / Historical Cases] --> Stream[Kafka / Kinesis]
+    Stream --> S3[S3 encrypted raw zone]
+    S3 --> ETL[Glue / Spark / EMR]
+    ETL --> Feature[Feature engineering / Feast when justified]
+    Feature --> ML[Fraud ML prediction layer<br/>XGBoost / LightGBM / RF / Logistic]
+    ML --> MLflow[Managed MLflow / SageMaker Model Registry]
+    ML --> SHAP[SHAP / calibrated reason codes]
+    MLflow --> Score[Versioned risk score]
+    SHAP --> Score
+    Score --> Cases[(PostgreSQL case, score, and audit provenance)]
+    Cases --> Supervisor[LangGraph Supervisor in Bedrock AgentCore]
+    Supervisor --> Fraud[Fraud Investigator Agent]
+    Supervisor --> Graph[Graph Investigator Agent]
+    Supervisor --> Policy[Policy Agent]
+    Supervisor --> Evidence[Evidence Agent]
+    Graph --> Neptune[Amazon Neptune / GraphRAG]
+    Evidence --> RAG[Bedrock Knowledge Bases / hybrid retrieval]
+    Fraud --> Gateway[AgentCore Gateway / MCP tools]
+    Graph --> Gateway
+    Policy --> Gateway
+    Evidence --> Gateway
+    Gateway --> Bedrock[Amazon Bedrock]
+    Bedrock --> Report[Cited investigation report]
+    Report --> Review[Human reviewer]
+    Review --> Feedback[Decision / feedback / monitoring]
+    Feedback --> Observe[CloudWatch / ADOT / MLflow evaluation]
+```
+
+The diagram is the target architecture, not a deployment claim. See the [implementation status matrix](docs/AWS_TARGET_ARCHITECTURE.md), [dataset catalog and controls](docs/DATASETS.md), and [incremental plan](AGENTIC_FRAUD_PLATFORM_PLAN.md).
+
+## Implemented foundation
 
 - FastAPI and Pydantic contracts, domain-separated case creation and listing.
 - SQLAlchemy async sessions, psycopg 3, bounded PostgreSQL connection pooling.
 - Alembic migrations for cases and audit events; PostgreSQL triggers reject audit updates, deletes, and truncation.
 - Transactional case/audit creation and owner-scoped idempotency keys. Replays return the original case; conflicting reuse returns HTTP 409.
 - Local operator bearer authentication, owner-filtered reads, fail-closed access when no token is configured.
-- An adapter protocol and explicit unavailable status for all three existing models. **No scoring implementation or fabricated predictions.**
+- An adapter protocol and explicit unavailable status for all three existing models. **No authoritative model is enabled and no prediction is fabricated.**
+- Immutable, case-scoped score provenance for verified adapters, including model/schema version, backend, optional artifact checksum, actor and audit event; raw features are not persisted.
 - Liveness, migration-aware readiness, request correlation IDs, reproducible dependency lock, and tests.
 
 This is a local foundation, not a completed agentic platform. The AWS-first target uses Kinesis/S3/Glue/EMR, SageMaker and managed MLflow, Neptune, Bedrock/AgentCore, IAM/KMS, CloudWatch, and durable human review. These remain future increments in [the plan](AGENTIC_FRAUD_PLATFORM_PLAN.md) and the [AWS architecture status matrix](docs/AWS_TARGET_ARCHITECTURE.md). Swagger `/docs` is the initial API exploration interface. There is no review/approval endpoint yet.
@@ -95,7 +130,7 @@ This starts a temporary password-protected cluster on loopback and a dynamically
 
 ## Preservation and next increment
 
-The inspected GitHub repositories contain example code and documented results, but no committed saved models or datasets. See [baseline inventory](docs/BASELINE_INVENTORY.md). Before any real scoring adapter can be enabled, recover the authoritative model, preprocessing, class mapping, feature order, dependency versions, and golden inference fixtures. No existing model environment should be upgraded to match this service.
+The inspected GitHub repositories contain example code and documented results, but no committed saved models or datasets. See the [baseline inventory](docs/BASELINE_INVENTORY.md) and [dataset catalog, validation, security, and AWS ingestion plan](docs/DATASETS.md). Before any real scoring adapter can be enabled, recover the authoritative model, preprocessing, class mapping, feature order, dependency versions, and golden inference fixtures. No existing model environment should be upgraded to match this service.
 
 Pending inputs: authoritative portfolio checkout/artifact locations and AWS inference contracts. The source, plan, tests, and guardrail demonstration are published in the public repository linked above. Real datasets, model binaries, secrets, and local runtime files are not part of this repository.
 

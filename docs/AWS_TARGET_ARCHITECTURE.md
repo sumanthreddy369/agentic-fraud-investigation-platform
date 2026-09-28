@@ -1,6 +1,6 @@
 # AWS target architecture and implementation status
 
-This is the governing target architecture for the Agentic Fraud Detection and Investigation Platform. Delivery remains incremental: preserve verified IEEE-CIS, Home Credit, and Elliptic components, place versioned adapters around them, and add production services only after their contracts and acceptance evidence are available.
+This is the governing target architecture for the Agentic Fraud Detection and Investigation Platform. Delivery remains incremental: preserve verified IEEE-CIS, Home Credit, and Elliptic components, place versioned adapters around them, and add production services only after their contracts and acceptance evidence are available. Dataset-specific sources, schemas, controls, and AWS landing rules are defined in [DATASETS.md](DATASETS.md).
 
 ## Current status
 
@@ -83,14 +83,14 @@ flowchart TD
 
 ## Delivery order
 
-1. Recover authoritative models, preprocessing, datasets, AWS endpoint contracts, and golden predictions.
-2. Persist model score provenance and connect exactly one verified model adapter without disturbing its source environment.
-3. Add investigation-run, evidence, checkpoint, and review-decision schemas with restart and concurrency tests.
-4. Establish S3/Glue contracts and one idempotent batch path before adding Kinesis or Spark streaming.
-5. Add Neptune entity mappings for one domain and verify fraud-ring queries against labeled fixtures.
-6. Add policy/case document ingestion and benchmark keyword, vector, hybrid, and GraphRAG retrieval using NDCG, MRR, Recall@k, latency, and cost.
-7. Connect the bounded LangGraph workflow to AgentCore/Bedrock and preserve the human-review interrupt.
-8. Add AWS infrastructure as code, CloudWatch/ADOT telemetry, failure drills, security review, and controlled deployment.
+1. **Blocked on supplied assets:** recover authoritative models, preprocessing, datasets, AWS endpoint contracts, and golden predictions.
+2. **Partial:** immutable model-score provenance is implemented; connect exactly one verified real-model adapter without disturbing its source environment when the blocked assets arrive.
+3. **Next independent increment:** add investigation-run, evidence, checkpoint, and review-decision schemas with restart and concurrency tests.
+4. **Planned:** establish S3/Glue contracts and one idempotent batch path before adding Kinesis or Spark streaming.
+5. **Planned:** add Neptune entity mappings for one domain and verify fraud-ring queries against labeled fixtures.
+6. **Planned:** add policy/case document ingestion and benchmark keyword, vector, hybrid, and GraphRAG retrieval using NDCG, MRR, Recall@k, latency, and cost.
+7. **Planned:** connect the bounded LangGraph workflow to AgentCore/Bedrock and preserve the human-review interrupt.
+8. **Planned:** add AWS infrastructure as code, CloudWatch/ADOT telemetry, failure drills, security review, and controlled deployment.
 
 This order produces reviewable vertical slices and prevents expensive AWS infrastructure from hiding missing model contracts or weak evaluation data.
 

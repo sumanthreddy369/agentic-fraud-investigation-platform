@@ -56,3 +56,9 @@ Added a case-scoped scoring API and immutable `model_score_references` migration
 No source model was recovered or enabled. The API remains fail closed for all three domains unless an authoritative adapter is configured.
 
 Verification completed: **82 tests passed** against a disposable PostgreSQL 17 cluster, including migration round-trip, ORM/schema drift detection, case ownership isolation, idempotent replay/conflict behavior, model-version consistency, and database rejection of score update/delete/truncate operations. Ruff and Bandit passed.
+
+## Increment 6 — architecture and dataset publication
+
+Added the complete target flowchart to the README and published a dataset catalog covering authoritative candidate sources, expected files/logical inputs, identifiers, labels, temporal semantics, join and leakage controls, evaluation requirements, governed S3 layout, manifests, Glue/EMR transformations, IAM/KMS controls, and onboarding exit criteria for IEEE-CIS, Home Credit, and Elliptic.
+
+Expanded `.gitignore` for datasets, columnar files, archives, model binaries, MLflow/Ray/vector/graph artifacts, secrets, AWS packages, and Terraform state while allowing synthetic fixtures under `tests/fixtures`. No dataset or model artifact was added to Git.

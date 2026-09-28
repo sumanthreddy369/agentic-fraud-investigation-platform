@@ -1,5 +1,7 @@
 # Baseline inventory
 
+Dataset source expectations, AWS landing-zone design, validation rules, split/leakage controls, and onboarding exit criteria are maintained in [DATASETS.md](DATASETS.md).
+
 Inspected read-only before implementation. These are related repositories; a complete authoritative AWS Risk Portfolio checkout has not yet been supplied.
 
 | Domain | Source revision | Observed source | Artifact status |

@@ -1,6 +1,8 @@
 # Agentic Fraud Detection and Investigation Platform
 
-Status: incremental implementation in progress. The local API, persistence, guardrails, and portable inference boundary are implemented; no AWS deployment is claimed. The AWS-first target and current gap matrix are defined in [docs/AWS_TARGET_ARCHITECTURE.md](docs/AWS_TARGET_ARCHITECTURE.md).
+Status: incremental implementation in progress. The local API, persistence, guardrails, portable inference boundary, and immutable case-scoped score provenance are implemented; no authoritative model or AWS deployment is claimed. The AWS-first target and current gap matrix are defined in [docs/AWS_TARGET_ARCHITECTURE.md](docs/AWS_TARGET_ARCHITECTURE.md).
+
+The target flow is also shown in the repository [README](README.md). Dataset sources, licensing gates, schemas, S3 layout, transformations, validation, leakage controls, and onboarding criteria are defined in [docs/DATASETS.md](docs/DATASETS.md).
 
 ## Objective and preservation boundary
 
@@ -70,6 +72,7 @@ Existing AWS inference remains in place. Bedrock receives only approved, minimiz
 - Establish known-input/known-output inference fixtures and record existing behavior before changes. Do not load untrusted serialized models.
 - Resolve README/source discrepancies with the authoritative deployed assets. Missing artifacts remain explicit blockers for their adapters.
 - Preserve raw data and model directories; put new code and environments in additive locations selected after inspecting the complete repository.
+- Complete the dataset manifest and onboarding gates in `docs/DATASETS.md`; dataset files and generated artifacts remain outside Git.
 
 Exit: each adapter has a verified source contract and baseline, or is explicitly unavailable. No placeholder prediction may be presented as a real model result.
 
@@ -82,6 +85,8 @@ Exit: each adapter has a verified source contract and baseline, or is explicitly
 - Add a basic investigator interface for creating a case and viewing scores/evidence. Reuse an existing suitable frontend if one is found.
 
 Exit: a case can reference a verified model result; invalid input is rejected; unavailable models return explicit errors; adapter predictions match the baseline within documented tolerances. Migrations apply to a clean database and an upgrade fixture.
+
+Current progress: the case API, immutable score-reference migration, scoring guardrails, model/schema/backend/artifact provenance, and unavailable-model behavior are implemented and tested. Adapter parity against a preserved real model remains blocked on the authoritative artifacts and golden fixtures.
 
 ### Phase 2: ingestion and evidence retrieval
 
@@ -151,7 +156,7 @@ Core records: `cases`, `model_score_references`, `evidence_items`, `investigatio
 
 ## Immediate next work and external inputs
 
-The next implementation increment is Phase 0 plus a minimal verified adapter/API slice, not a simultaneous build of every optional component. Required inputs are the authoritative portfolio path, dataset/model locations, existing AWS endpoint configuration, and later deployment identity/Bedrock configuration. Credentials belong in AWS Secrets Manager, Parameter Store, or local untracked environment configuration, never in this plan or Git.
+Phase 0 and the real-adapter portion of Phase 1 remain blocked on the authoritative portfolio path, dataset/model locations, existing AWS endpoint configuration, and golden predictions. The next independent implementation increment is the durable investigation/evidence/review schema and state-transition API from Phases 3-4. Later AWS deployment requires identity and Bedrock configuration. Credentials belong in AWS Secrets Manager, Parameter Store, or local untracked environment configuration, never in this plan or Git.
 
 Redis, Ray, Qdrant, Langfuse, and Milvus are deliberately conditional decisions. Add them only when a workload benchmark, portability goal, or deployment requirement demonstrates a concrete benefit. The AWS target architecture is the default.
 
