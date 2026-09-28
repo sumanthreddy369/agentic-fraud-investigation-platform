@@ -19,13 +19,13 @@ GitHub Actions has been authored but has not run remotely. No application or dat
 - Authoritative portfolio checkout and saved model/preprocessing/dataset locations.
 - Feature, class-label, schema, and inference contracts, plus golden prediction fixtures.
 
-Phase 1 is partial: real model adapters, score provenance persistence, enterprise identity, and investigator UI are not yet implemented. LangGraph, MCP, Qdrant, Azure OpenAI, retrieval/ETL, and human review are subsequent increments. Do not label this foundation as a completed agentic platform.
+Phase 1 is partial: real model adapters, score provenance persistence, enterprise identity, and investigator UI are not yet implemented. LangGraph, AgentCore Gateway/MCP, Bedrock, retrieval/ETL, and human review are subsequent increments. Do not label this foundation as a completed agentic platform.
 
 ## Increment 2 — guardrails
 
 Implemented live API controls for server-configured roles and domains, bounded request bodies/headers, slow-body deadlines, per-peer throttling, concurrency limits, trusted hosts, sanitized errors, safe structured event logging, security headers, bounded audit pagination, database deadlines, model output validation, scoring timeouts/circuit breaking, and write/scoring disable switches.
 
-Added a separately tested agent-policy library: read-only tool allowlist, trusted case context, scoped evidence, execution/evidence budgets, default-deny external-AI payload preparation, evidence classification/approval checks, citation validation, abstention, and mandatory human-review packets. These policies are not yet connected to LangGraph, MCP or Azure; there is no autonomous business-action executor or durable review workflow.
+Added a separately tested agent-policy library: read-only tool allowlist, trusted case context, scoped evidence, execution/evidence budgets, default-deny external-AI payload preparation, evidence classification/approval checks, citation validation, abstention, and mandatory human-review packets. These policies are not yet connected to LangGraph, AgentCore Gateway/MCP, or Bedrock; there is no autonomous business-action executor or durable review workflow.
 
 Verification completed: **62 tests passed** on Python 3.11.9 using a disposable PostgreSQL 17.4 cluster. **14 synthetic showcase checks passed**. Ruff lint/format and Bandit static analysis passed. The saved pip-audit report found no known vulnerabilities in the 23 locked runtime dependencies checked on 2026-09-25; this is a point-in-time advisory check, not proof of security. The temporary database was stopped and removed.
 
@@ -42,3 +42,9 @@ Added an optional checksum-pinned ONNX Runtime adapter supporting CPU, CUDA, and
 No source model was converted and no model was enabled. Production acceptance still requires authoritative artifacts, golden source-vs-ONNX parity, business-metric regression tests, target-hardware benchmarks, and model governance approval.
 
 Verification completed on Python 3.11.9: **80 tests passed** with a disposable PostgreSQL 17.4 cluster. The suite executed a generated ONNX graph through both ONNX Runtime CPU and the pinned OpenVINO execution provider. Ruff, Bandit, and the 14-check guardrail demo passed. Point-in-time advisory audits found no known vulnerabilities in either locked inference dependency set.
+
+## Increment 4 — AWS target alignment
+
+Adopted an AWS-first production target: Kinesis or preserved MSK, KMS-encrypted S3, Glue/EMR Spark, SageMaker with managed MLflow and Model Registry, Neptune Database/Analytics, Bedrock Knowledge Bases, LangGraph in Bedrock AgentCore Runtime, AgentCore Gateway/MCP, IAM/KMS, ADOT/CloudWatch/CloudTrail, and PostgreSQL-backed human review. Added a capability-by-capability status matrix and guarded delivery order in `AWS_TARGET_ARCHITECTURE.md`.
+
+This increment changes the implementation roadmap, not the deployment state. No AWS resources, datasets, model endpoints, Bedrock calls, or Neptune graphs were created. Qdrant, Langfuse, Ray, Redis, and Milvus are now explicit benchmark- or portability-driven alternatives rather than default production dependencies.

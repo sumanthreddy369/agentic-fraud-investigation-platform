@@ -14,7 +14,7 @@ An additive investigation layer for the existing AWS Risk Portfolio. The origina
 - An adapter protocol and explicit unavailable status for all three existing models. **No scoring implementation or fabricated predictions.**
 - Liveness, migration-aware readiness, request correlation IDs, reproducible dependency lock, and tests.
 
-This is a local foundation, not a completed agentic platform. LangGraph, MCP, Qdrant, Azure OpenAI, OIDC/MSAL, document ETL, and human review screens remain future increments in [the plan](AGENTIC_FRAUD_PLATFORM_PLAN.md). Swagger `/docs` is the initial API exploration interface. There is no review/approval endpoint yet.
+This is a local foundation, not a completed agentic platform. The AWS-first target uses Kinesis/S3/Glue/EMR, SageMaker and managed MLflow, Neptune, Bedrock/AgentCore, IAM/KMS, CloudWatch, and durable human review. These remain future increments in [the plan](AGENTIC_FRAUD_PLATFORM_PLAN.md) and the [AWS architecture status matrix](docs/AWS_TARGET_ARCHITECTURE.md). Swagger `/docs` is the initial API exploration interface. There is no review/approval endpoint yet.
 
 ## Guardrails and showcase
 
@@ -22,7 +22,7 @@ The guardrail increment adds role/domain restrictions, bounded requests, throttl
 
 [Guardrail matrix and demo guide](docs/GUARDRAILS.md) lists what is enforced, what is a tested agent-policy library, and what requires enterprise infrastructure. Run `uv run python scripts/demo_guardrails.py` for a synthetic demonstration without a running database or cloud credentials. See [captured demo results](docs/GUARDRAIL_DEMO_REPORT.json).
 
-The agent policy library does not yet connect to LangGraph/MCP/Azure. Human-review packets cannot execute actions; an actual durable analyst approval workflow remains pending.
+The agent policy library does not yet connect to LangGraph, AgentCore Gateway/MCP, or Bedrock. Human-review packets cannot execute actions; an actual durable analyst approval workflow remains pending.
 
 ## Optional accelerated inference
 

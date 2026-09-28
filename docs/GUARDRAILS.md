@@ -2,7 +2,7 @@
 
 This project demonstrates defense in depth for a fraud investigation service. There is no universal set of guardrails that makes a platform production-ready or compliant. The controls below address the current API and prepare bounded interfaces for future agents. They do not change or retrain the existing IEEE-CIS, Home Credit, or Elliptic models.
 
-**Status legend:** Live = enforced by the current API; Policy = implemented and tested as an agent integration library, not yet connected to LangGraph/MCP/Azure; Deployment = infrastructure, identity, or workflow work still required.
+**Status legend:** Live = enforced by the current API; Policy = implemented and tested as an agent integration library, not yet connected to LangGraph/AgentCore Gateway/Bedrock; Deployment = infrastructure, identity, or workflow work still required.
 
 ## Live API controls
 
@@ -37,13 +37,13 @@ Implemented in `agent_policy.py`, verified with synthetic tools. These controls 
 | --- | --- | --- |
 | Excessive agency / unknown tools | Deny by default; only explicitly registered `get_case_evidence`, `search_policy`, and `get_graph_neighborhood` tools can run | No shell, arbitrary SQL, arbitrary URL fetch, account block, payment, loan approval, or self-approval tool. |
 | Tool argument injection | Typed bounded arguments reject extra fields; case, domain and identity come from trusted server context | Never construct this context from LLM-provided claims. Retrieval implementations must also apply authorization before searching. |
-| Cross-case evidence leakage | Returned evidence must match authorized case, domain and owner; reject the entire batch on mismatch | Qdrant metadata filters are not yet integrated. |
-| Runaway ReAct loops | Five tool calls/run, 30-second run budget, five-second tool deadline, no parallel tool calls, failed calls spend budget | Counters are in-memory. Durable distributed budgets and actual Azure token/cost accounting are pending. |
+| Cross-case evidence leakage | Returned evidence must match authorized case, domain and owner; reject the entire batch on mismatch | Bedrock Knowledge Bases or alternative retrieval metadata filters are not yet integrated. |
+| Runaway ReAct loops | Five tool calls/run, 30-second run budget, five-second tool deadline, no parallel tool calls, failed calls spend budget | Counters are in-memory. Durable distributed budgets and actual Bedrock token/cost accounting are pending. |
 | Excessive evidence / poisoned IDs | Bounded excerpts and cumulative evidence counts; reject same-ID/different-content collisions | Ingestion signing, provenance checks, malware scanning, and source deletion propagation are pending. |
 | Fabricated citations | Recommendations may reference only collected evidence IDs; duplicate/unknown citations are rejected | A valid citation establishes provenance, not entailment or truth. Semantic groundedness evaluation is still required. |
 | Unsupported conclusions | Empty evidence only permits an `insufficient_evidence` recommendation | Fraud labels and risk scores remain outputs of verified models, not invented LLM probabilities. |
 | Autonomous consequential action | Every accepted recommendation is a review packet with `requires_human_review=true`; no approval or action executor exists | This is not yet a durable analyst workflow. Add authenticated reviewer separation, evidence-version binding, expiry, replay protection and atomic decision transitions before enabling actions. |
-| Unapproved cloud disclosure | External AI payload preparation disabled by default; opt-in still requires public classification AND explicit approval for every evidence item | No network request is made by this library. Restrict egress at infrastructure and Azure client boundaries during integration. |
+| Unapproved cloud disclosure | External AI payload preparation disabled by default; opt-in still requires public classification AND explicit approval for every evidence item | No network request is made by this library. Restrict egress at infrastructure and Bedrock client boundaries during integration. |
 | Obvious sensitive content | Additional email, SSN-like, card-like and credential-assignment screen denies marked snippets | Heuristic only; it misses formats/languages and can have false positives. It is not complete DLP, anonymization, PCI or privacy compliance. |
 | Prompt injection in documents | Retrieved text is treated as untrusted evidence; it cannot grant tools, change case identity, or bypass a review packet | No claim to detect every malicious prompt. Delimit evidence in prompts, retain server-side controls, and red-team the eventual LLM integration. |
 
@@ -52,14 +52,14 @@ Implemented in `agent_policy.py`, verified with synthetic tools. These controls 
 | Area | Required implementation / operational evidence |
 | --- | --- |
 | Identity | OIDC/MSAL token signature, issuer, audience, expiry and tenant validation; MFA/conditional access; revocation and least-privilege role assignment; distinct reviewer identities. |
-| Authorization | Tenant/record-level policy plus PostgreSQL RLS; Qdrant pre-search ACL filtering; authorization on every MCP tool; service identities distinct from human identities. |
+| Authorization | Tenant/record-level policy plus PostgreSQL RLS; pre-search ACL filtering in the selected retrieval backend; authorization on every AgentCore Gateway/MCP tool; service identities distinct from human identities. |
 | Network | TLS, private endpoints where appropriate, gateway/WAF quotas, trusted reverse-proxy configuration, outbound destination allowlists, DNS/redirect-aware SSRF protection, no metadata-service access. |
-| Secrets and encryption | Secret manager/workload identity, rotation, no secrets in prompts/traces, KMS encryption and key separation, least-privilege S3/Azure/database credentials. |
+| Secrets and encryption | Secrets Manager/workload identity, rotation, no secrets in prompts/traces, KMS encryption and key separation, least-privilege S3/Bedrock/database credentials. |
 | Runtime isolation | Non-root containers, read-only filesystem, resource quotas, isolated model workers, process-level deadlines, patched base images, sandboxed document parsing. |
 | Data governance | Dataset lineage and source permissions, purpose-limited feature access, quarantine/schema evolution, UTC semantics, retention/deletion schedules and legal holds where applicable, indexed-copy deletion propagation. |
 | Model governance | Artifact hashes/signatures and dependency locks; golden prediction parity; frozen preprocessing; time-based validation; calibration, drift, fairness and reviewer-capacity thresholds; model approval/version rollback. |
 | Retrieval quality | Approved-source ingestion, document/chunk provenance, HNSW recall benchmarks, held-out NDCG/MRR/Recall, RRF/BGE comparisons, stale-evidence detection, no cross-domain joins without verified mappings. |
-| AI runtime | Durable LangGraph checkpoints, actual token/cost/iteration reservations, provider-content filters, redacted Langfuse traces, structured-output validation, groundedness/abstention evaluations. |
+| AI runtime | Durable LangGraph checkpoints, actual token/cost/iteration reservations, Bedrock guardrail/content controls where appropriate, redacted ADOT/CloudWatch traces, structured-output validation, groundedness/abstention evaluations. |
 | Human control | Durable review queue, reviewer permission checks, four-eyes separation where needed, evidence/version-bound decisions, optimistic concurrency, retry-safe resume, audit of overrides and escalation. |
 | Audit and operations | Non-owner runtime database role, external immutable/WORM audit archive, read/security-event retention, SIEM alerts and incident playbooks, measurable SLOs, staged rollout and rollback. |
 | Resilience | Tested backup/restore and recovery objectives, dependency isolation, persistent jobs/outbox, bounded retries with jitter, dead-letter handling, replay tests, disaster-recovery drills. |
