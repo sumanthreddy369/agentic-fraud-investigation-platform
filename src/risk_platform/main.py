@@ -19,6 +19,7 @@ from risk_platform.config import Settings
 from risk_platform.contracts import (
     AuditView,
     CaseCreate,
+    CaseScoreView,
     CaseView,
     Domain,
     ModelAvailability,
@@ -67,6 +68,10 @@ def case_view(case) -> CaseView:
     return CaseView.model_validate(case, from_attributes=True)
 
 
+def score_view(score) -> CaseScoreView:
+    return CaseScoreView.model_validate(score, from_attributes=True)
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     configuration = settings or Settings()
 
@@ -82,7 +87,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Risk Investigation Platform",
-        version="0.2.0",
+        version="0.4.0",
         lifespan=lifespan,
         docs_url="/docs" if configuration.docs_enabled else None,
         redoc_url=None,
@@ -127,10 +132,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def ready(database_session: Annotated[AsyncSession, Depends(session)]):
         # A socket check alone would report ready before migrations have been applied.
         revision = await database_session.scalar(text("SELECT version_num FROM alembic_version"))
-        if revision != "0001_cases":
+        if revision != "0002_model_scores":
             raise HTTPException(503, "Database schema is not current")
         await database_session.execute(text("SELECT id FROM cases LIMIT 0"))
-        return {"status": "ready", "scope": "case_api", "models_configured": False}
+        return {
+            "status": "ready",
+            "scope": "case_api",
+            "models_configured": any(item.available for item in app.state.models.availability()),
+        }
 
     @app.get("/v1/models", response_model=list[ModelAvailability])
     async def models(_: Annotated[str, Depends(require_permission("models:read", actor))]):
@@ -154,6 +163,47 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(503, str(error)) from error
         except ScoringFailure as error:
             raise HTTPException(error.status, error.reason) from None
+
+    @app.post(
+        "/v1/cases/{case_id}/scores",
+        response_model=CaseScoreView,
+        status_code=201,
+        dependencies=[Depends(require_permission("scores:create", actor))],
+    )
+    async def score_case(
+        case_id: UUID,
+        payload: ScoreRequest,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        case = await cases.get(case_id)
+        if case is None:
+            raise HTTPException(404, "Case not found")
+        domain = Domain(case.domain)
+        request_hash = cases.score_request_hash(domain, payload)
+        try:
+            existing = await cases.score_replay(case.id, idempotency_key, request_hash)
+        except IdempotencyConflict as error:
+            raise HTTPException(409, str(error)) from error
+        if existing is not None:
+            response.status_code = 200
+            return score_view(existing)
+        try:
+            result = await app.state.scoring.score(domain, payload)
+        except ModelUnavailable as error:
+            raise HTTPException(503, str(error)) from error
+        except ScoringFailure as error:
+            raise HTTPException(error.status, error.reason) from None
+        availability = app.state.models.get(domain).availability()
+        try:
+            recorded, created = await cases.record_score(
+                case, idempotency_key, request_hash, result, availability
+            )
+        except IdempotencyConflict as error:
+            raise HTTPException(409, str(error)) from error
+        response.status_code = 201 if created else 200
+        return score_view(recorded)
 
     @app.post(
         "/v1/cases",
@@ -214,6 +264,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             AuditView.model_validate(event, from_attributes=True)
             for event in await cases.audit(case_id, limit, offset)
         ]
+
+    @app.get(
+        "/v1/cases/{case_id}/scores",
+        response_model=list[CaseScoreView],
+        dependencies=[Depends(require_permission("cases:read", actor))],
+    )
+    async def case_scores(case_id: UUID, cases: Annotated[CaseService, Depends(service)]):
+        if await cases.get(case_id) is None:
+            raise HTTPException(404, "Case not found")
+        return [score_view(score) for score in await cases.list_scores(case_id)]
 
     @app.get("/v1/guardrails", dependencies=[Depends(require_permission("controls:read", actor))])
     async def controls():

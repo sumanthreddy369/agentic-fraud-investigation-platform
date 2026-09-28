@@ -2,6 +2,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from risk_platform.config import Settings
+from risk_platform.contracts import Domain, ModelAvailability, ScoreResult
 from risk_platform.main import actor, create_app
 
 PAYLOAD = {"domain": "ieee_cis", "source_record_id": "transaction-123", "title": "Review alert"}
@@ -67,6 +68,81 @@ async def test_inventory_has_all_domains(client):
     models = (await api.get("/v1/models")).json()
     assert {model["domain"] for model in models} == {"ieee_cis", "home_credit", "elliptic"}
     assert all(model["available"] is False for model in models)
+
+
+class ProvenanceAdapter:
+    def __init__(self):
+        self.calls = 0
+
+    def availability(self):
+        return ModelAvailability(
+            domain=Domain.TRANSACTION,
+            available=True,
+            reason="verified fixture",
+            backend="fixture-runtime",
+            model_version="fixture-v1",
+            artifact_sha256="a" * 64,
+        )
+
+    async def score(self, request):
+        self.calls += 1
+        return ScoreResult(
+            domain=Domain.TRANSACTION,
+            model_version="fixture-v1",
+            input_schema_version=request.input_schema_version,
+            positive_class="fraud",
+            probability=0.82,
+        )
+
+
+async def test_case_score_provenance_is_immutable_idempotent_and_feature_safe(client):
+    api, app = client
+    created = await api.post("/v1/cases", json=PAYLOAD, headers={"Idempotency-Key": "score-case"})
+    case_id = created.json()["id"]
+    adapter = ProvenanceAdapter()
+    app.state.models._adapters[Domain.TRANSACTION] = adapter
+    request = {"input_schema_version": "v1", "features": {"amount": 123.45}}
+    first = await api.post(
+        f"/v1/cases/{case_id}/scores",
+        json=request,
+        headers={"Idempotency-Key": "score-1"},
+    )
+    assert first.status_code == 201
+    score = first.json()
+    assert score["case_id"] == case_id
+    assert score["probability"] == 0.82
+    assert score["backend"] == "fixture-runtime"
+    assert score["artifact_sha256"] == "a" * 64
+    assert "features" not in score
+
+    replay = await api.post(
+        f"/v1/cases/{case_id}/scores",
+        json=request,
+        headers={"Idempotency-Key": "score-1"},
+    )
+    assert replay.status_code == 200
+    assert replay.json() == score
+    assert adapter.calls == 1
+    conflict = await api.post(
+        f"/v1/cases/{case_id}/scores",
+        json={**request, "features": {"amount": 999}},
+        headers={"Idempotency-Key": "score-1"},
+    )
+    assert conflict.status_code == 409
+    assert adapter.calls == 1
+    assert (await api.get(f"/v1/cases/{case_id}/scores")).json() == [score]
+    audit = (await api.get(f"/v1/cases/{case_id}/audit")).json()
+    assert [event["event"] for event in audit] == ["case.created", "model.score_recorded"]
+
+    app.dependency_overrides[actor] = lambda: "other-investigator"
+    assert (await api.get(f"/v1/cases/{case_id}/scores")).status_code == 404
+    assert (
+        await api.post(
+            f"/v1/cases/{case_id}/scores",
+            json=request,
+            headers={"Idempotency-Key": "other"},
+        )
+    ).status_code == 404
 
 
 @pytest.mark.parametrize(

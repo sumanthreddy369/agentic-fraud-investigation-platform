@@ -43,7 +43,8 @@ class ScoringGateway:
                 if time.monotonic() - circuit.opened_at < self.settings.model_cooldown_seconds:
                     raise ScoringFailure(503, "Model circuit is open")
             adapter = self.models.get(domain)
-            if not adapter.availability().available:
+            availability = adapter.availability()
+            if not availability.available:
                 raise ModelUnavailable(
                     "Authoritative model, preprocessing, and inference contract not yet verified"
                 )
@@ -56,6 +57,10 @@ class ScoringGateway:
                 if (
                     result.domain != domain
                     or result.input_schema_version != request.input_schema_version
+                    or (
+                        availability.model_version is not None
+                        and result.model_version != availability.model_version
+                    )
                 ):
                     raise ValueError("Mismatched model contract")
             except Exception as error:

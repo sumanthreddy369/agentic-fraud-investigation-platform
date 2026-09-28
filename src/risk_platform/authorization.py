@@ -6,7 +6,15 @@ from fastapi import Depends, HTTPException, Request
 
 PERMISSIONS = {
     "investigator": frozenset(
-        {"cases:read", "cases:create", "audit:read", "models:read", "models:score", "controls:read"}
+        {
+            "cases:read",
+            "cases:create",
+            "scores:create",
+            "audit:read",
+            "models:read",
+            "models:score",
+            "controls:read",
+        }
     ),
     "reviewer": frozenset({"cases:read", "audit:read", "models:read", "controls:read"}),
     "auditor": frozenset({"cases:read", "audit:read", "models:read", "controls:read"}),
@@ -22,6 +30,8 @@ def require_permission(permission: str, authentication):
             raise HTTPException(503, "Case writes are disabled")
         if permission == "models:score" and not settings.scoring_enabled:
             raise HTTPException(503, "Model scoring is disabled")
+        if permission == "scores:create" and not settings.writes_enabled:
+            raise HTTPException(503, "Case writes are disabled")
         return identity
 
     return check

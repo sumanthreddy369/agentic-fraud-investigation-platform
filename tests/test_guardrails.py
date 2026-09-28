@@ -13,14 +13,25 @@ PAYLOAD = {"domain": "ieee_cis", "source_record_id": "synthetic-1", "title": "Gu
 
 async def test_read_only_roles_and_spoofed_role_header(client):
     api, app = client
+    app.state.settings.operator_role = "investigator"
+    created = await api.post(
+        "/v1/cases", json=PAYLOAD, headers={"Idempotency-Key": "existing-case"}
+    )
+    case_id = created.json()["id"]
     app.state.settings.operator_role = "auditor"
     response = await api.post(
         "/v1/cases", json=PAYLOAD, headers={"Idempotency-Key": "one", "X-Role": "admin"}
     )
     assert response.status_code == 403
-    assert (await api.get("/v1/cases")).json() == []
+    assert [item["id"] for item in (await api.get("/v1/cases")).json()] == [case_id]
     response = await api.post(
         "/v1/models/ieee_cis/score", json={"input_schema_version": "v1", "features": {}}
+    )
+    assert response.status_code == 403
+    response = await api.post(
+        f"/v1/cases/{case_id}/scores",
+        json={"input_schema_version": "v1", "features": {}},
+        headers={"Idempotency-Key": "forbidden-score"},
     )
     assert response.status_code == 403
 
@@ -43,6 +54,10 @@ async def test_domain_restriction_hides_existing_case_and_audit(client):
 
 async def test_kill_switches(client):
     api, app = client
+    created = await api.post(
+        "/v1/cases", json=PAYLOAD, headers={"Idempotency-Key": "existing-case"}
+    )
+    case_id = created.json()["id"]
     app.state.settings.writes_enabled = False
     app.state.settings.scoring_enabled = False
     assert (
@@ -51,6 +66,13 @@ async def test_kill_switches(client):
     assert (
         await api.post(
             "/v1/models/elliptic/score", json={"input_schema_version": "v1", "features": {}}
+        )
+    ).status_code == 503
+    assert (
+        await api.post(
+            f"/v1/cases/{case_id}/scores",
+            json={"input_schema_version": "v1", "features": {}},
+            headers={"Idempotency-Key": "disabled-score"},
         )
     ).status_code == 503
     assert (await api.get("/v1/cases")).status_code == 200
@@ -209,7 +231,12 @@ class FakeAdapter:
         self.calls = 0
 
     def availability(self):
-        return ModelAvailability(domain=Domain.TRANSACTION, available=True, reason="test fixture")
+        return ModelAvailability(
+            domain=Domain.TRANSACTION,
+            available=True,
+            reason="test fixture",
+            model_version="fixture-v1",
+        )
 
     async def score(self, request):
         self.calls += 1
@@ -238,6 +265,7 @@ def result(**changes):
         result(probability=2),
         result(domain="home_credit"),
         result(input_schema_version="other"),
+        result(model_version="fixture-v2"),
         ScoreResult.model_construct(**result(probability=-1)),
     ],
 )

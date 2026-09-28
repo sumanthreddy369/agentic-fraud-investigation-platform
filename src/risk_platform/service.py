@@ -6,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from risk_platform.contracts import CaseCreate, Domain
-from risk_platform.database import AuditEvent, Case
+from risk_platform.contracts import CaseCreate, Domain, ModelAvailability, ScoreRequest, ScoreResult
+from risk_platform.database import AuditEvent, Case, ModelScoreReference
 
 
 class DomainDenied(Exception):
@@ -87,5 +87,65 @@ class CaseService:
             .order_by(AuditEvent.created_at, AuditEvent.id)
             .limit(limit)
             .offset(offset)
+        )
+        return list(result)
+
+    @staticmethod
+    def score_request_hash(domain: Domain, request: ScoreRequest) -> str:
+        payload = {"domain": domain, **request.model_dump(mode="json")}
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+
+    async def score_replay(
+        self, case_id: UUID, key: str, request_hash: str
+    ) -> ModelScoreReference | None:
+        score = await self.session.scalar(
+            select(ModelScoreReference).where(
+                ModelScoreReference.case_id == case_id,
+                ModelScoreReference.idempotency_key == key,
+            )
+        )
+        if score is not None and score.request_hash != request_hash:
+            raise IdempotencyConflict("Idempotency key was already used for a different request")
+        return score
+
+    async def record_score(
+        self,
+        case: Case,
+        key: str,
+        request_hash: str,
+        result: ScoreResult,
+        availability: ModelAvailability,
+    ) -> tuple[ModelScoreReference, bool]:
+        score = ModelScoreReference(
+            case_id=case.id,
+            actor_id=self.actor_id,
+            idempotency_key=key,
+            request_hash=request_hash,
+            backend=availability.backend,
+            artifact_sha256=availability.artifact_sha256,
+            **result.model_dump(mode="python"),
+        )
+        self.session.add(score)
+        try:
+            await self.session.flush()
+            self.session.add(
+                AuditEvent(case_id=case.id, actor_id=self.actor_id, event="model.score_recorded")
+            )
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self.score_replay(case.id, key, request_hash)
+            if existing is None:
+                raise
+            return existing, False
+        return score, True
+
+    async def list_scores(self, case_id: UUID) -> list[ModelScoreReference]:
+        result = await self.session.scalars(
+            select(ModelScoreReference)
+            .where(ModelScoreReference.case_id == case_id)
+            .order_by(ModelScoreReference.created_at, ModelScoreReference.id)
         )
         return list(result)

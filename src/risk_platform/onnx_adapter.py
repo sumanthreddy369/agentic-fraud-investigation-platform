@@ -148,6 +148,7 @@ class OnnxRuntimeAdapter(ModelAdapter):
             reason="Checksum-verified ONNX artifact and runtime contract loaded",
             backend=self.manifest.providers[0],
             model_version=self.manifest.model_version,
+            artifact_sha256=self.manifest.sha256,
         )
 
     async def score(self, request: ScoreRequest) -> ScoreResult:

@@ -1,7 +1,16 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint, Uuid
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    Uuid,
+)
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -60,6 +69,28 @@ class AuditEvent(Base):
     case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id"), index=True)
     actor_id: Mapped[str] = mapped_column(String(200))
     event: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+
+class ModelScoreReference(Base):
+    __tablename__ = "model_score_references"
+    __table_args__ = (
+        UniqueConstraint("case_id", "idempotency_key"),
+        CheckConstraint("probability >= 0 AND probability <= 1", name="ck_score_probability"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id"), index=True)
+    actor_id: Mapped[str] = mapped_column(String(200))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    domain: Mapped[str] = mapped_column(String(30))
+    model_version: Mapped[str] = mapped_column(String(500))
+    input_schema_version: Mapped[str] = mapped_column(String(500))
+    positive_class: Mapped[str] = mapped_column(String(500))
+    probability: Mapped[float] = mapped_column(Float)
+    backend: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    artifact_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
 

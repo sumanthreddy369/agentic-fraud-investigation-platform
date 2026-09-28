@@ -57,6 +57,7 @@ class ModelAvailability(Contract):
     reason: str
     backend: str | None = None
     model_version: str | None = None
+    artifact_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None = None
 
 
 class ScoreRequest(Contract):
@@ -72,3 +73,16 @@ class ScoreResult(Contract):
     input_schema_version: NonEmpty
     positive_class: NonEmpty
     probability: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+
+
+class CaseScoreView(Contract):
+    id: UUID
+    case_id: UUID
+    domain: Domain
+    model_version: str
+    input_schema_version: str
+    positive_class: str
+    probability: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+    backend: str | None
+    artifact_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None
+    created_at: datetime

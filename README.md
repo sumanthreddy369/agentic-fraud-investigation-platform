@@ -62,6 +62,8 @@ The case stores a source reference, not raw transaction data. Valid domains are 
 - `GET /v1/cases/{case_id}/audit`: chronological audit events.
 - `GET /v1/models`: list unresolved model integrations.
 - `POST /v1/models/{domain}/score`: currently returns 503 until a verified adapter is implemented.
+- `POST /v1/cases/{case_id}/scores`: score through the case's verified domain adapter and atomically record immutable provenance. Requires an `Idempotency-Key` and never persists raw feature values.
+- `GET /v1/cases/{case_id}/scores`: list authorized model-score provenance for a case.
 - `/health/live`: process liveness. `/health/ready`: current case schema; does **not** imply model/agent readiness.
 
 A single local token maps to the configured server-side `RISK_OPERATOR_ID`. This is not multi-user OAuth or enterprise authorization. `RISK_ENVIRONMENT` accepts only `local`/`test`; keep the server bound to loopback until OIDC, role authorization, and deployment controls are added.
@@ -97,4 +99,4 @@ The inspected GitHub repositories contain example code and documented results, b
 
 Pending inputs: authoritative portfolio checkout/artifact locations and AWS inference contracts. The source, plan, tests, and guardrail demonstration are published in the public repository linked above. Real datasets, model binaries, secrets, and local runtime files are not part of this repository.
 
-The next increment should connect one verified scoring adapter and persist its provenance. Then add evidence retrieval and durable LangGraph review workflows. Missing models must remain visibly unavailable throughout.
+The service now persists provenance for any verified scoring adapter, including the model/schema versions, backend, optional artifact SHA-256, actor, probability, and case audit event. The next increment should connect an authoritative portfolio model, then add investigation/evidence records and durable LangGraph review workflows. Missing models must remain visibly unavailable throughout.

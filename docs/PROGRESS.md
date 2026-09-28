@@ -48,3 +48,11 @@ Verification completed on Python 3.11.9: **80 tests passed** with a disposable P
 Adopted an AWS-first production target: Kinesis or preserved MSK, KMS-encrypted S3, Glue/EMR Spark, SageMaker with managed MLflow and Model Registry, Neptune Database/Analytics, Bedrock Knowledge Bases, LangGraph in Bedrock AgentCore Runtime, AgentCore Gateway/MCP, IAM/KMS, ADOT/CloudWatch/CloudTrail, and PostgreSQL-backed human review. Added a capability-by-capability status matrix and guarded delivery order in `AWS_TARGET_ARCHITECTURE.md`.
 
 This increment changes the implementation roadmap, not the deployment state. No AWS resources, datasets, model endpoints, Bedrock calls, or Neptune graphs were created. Qdrant, Langfuse, Ray, Redis, and Milvus are now explicit benchmark- or portability-driven alternatives rather than default production dependencies.
+
+## Increment 5 — immutable model-score provenance
+
+Added a case-scoped scoring API and immutable `model_score_references` migration. Successful adapter results record the case, actor, domain, model and input-schema versions, positive class, probability, backend, optional artifact SHA-256, and timestamp in the same transaction as a `model.score_recorded` audit event. Raw model features are not persisted or returned. Case ownership/domain authorization, write and scoring kill switches, exact-request idempotency, and conflicting-key rejection apply before a score is exposed.
+
+No source model was recovered or enabled. The API remains fail closed for all three domains unless an authoritative adapter is configured.
+
+Verification completed: **82 tests passed** against a disposable PostgreSQL 17 cluster, including migration round-trip, ORM/schema drift detection, case ownership isolation, idempotent replay/conflict behavior, model-version consistency, and database rejection of score update/delete/truncate operations. Ruff and Bandit passed.

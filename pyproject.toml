@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "risk-investigation-platform"
-version = "0.3.0"
+version = "0.4.0"
 description = "Additive investigation services for the AWS Risk Portfolio"
 requires-python = ">=3.11,<3.14"
 dependencies = [
