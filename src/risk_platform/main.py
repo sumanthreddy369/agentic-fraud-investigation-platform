@@ -22,6 +22,8 @@ from risk_platform.contracts import (
     CaseScoreView,
     CaseView,
     Domain,
+    EvidenceCreate,
+    EvidenceView,
     ModelAvailability,
     ScoreRequest,
     ScoreResult,
@@ -31,7 +33,7 @@ from risk_platform.database import make_engine, make_sessions
 from risk_platform.http_guardrails import GuardrailMiddleware
 from risk_platform.onnx_adapter import load_onnx_adapters
 from risk_platform.scoring import ScoringFailure, ScoringGateway
-from risk_platform.service import CaseService, DomainDenied, IdempotencyConflict
+from risk_platform.service import CaseNotFound, CaseService, DomainDenied, IdempotencyConflict
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -120,6 +122,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def domain_error(request: Request, error: DomainDenied):
         return JSONResponse(status_code=403, content={"detail": "Domain access denied"})
 
+    @app.exception_handler(CaseNotFound)
+    async def missing_case(request: Request, error: CaseNotFound):
+        return JSONResponse(status_code=404, content={"detail": "Case not found"})
+
     @app.exception_handler(SQLAlchemyError)
     async def database_error(request: Request, error: SQLAlchemyError):
         return JSONResponse(status_code=503, content={"detail": "Database unavailable"})
@@ -132,7 +138,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def ready(database_session: Annotated[AsyncSession, Depends(session)]):
         # A socket check alone would report ready before migrations have been applied.
         revision = await database_session.scalar(text("SELECT version_num FROM alembic_version"))
-        if revision != "0002_model_scores":
+        if revision != "0003_evidence":
             raise HTTPException(503, "Database schema is not current")
         await database_session.execute(text("SELECT id FROM cases LIMIT 0"))
         return {
@@ -278,5 +284,43 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/v1/guardrails", dependencies=[Depends(require_permission("controls:read", actor))])
     async def controls():
         return control_catalog(configuration)
+
+    @app.post(
+        "/v1/cases/{case_id}/evidence",
+        response_model=EvidenceView,
+        status_code=201,
+        dependencies=[Depends(require_permission("evidence:create", actor))],
+    )
+    async def add_evidence(
+        case_id: UUID,
+        payload: EvidenceCreate,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        try:
+            record, created = await cases.add_evidence(case_id, payload, idempotency_key)
+        except IdempotencyConflict:
+            raise HTTPException(
+                409, "Idempotency key was already used for a different request"
+            ) from None
+        response.status_code = 201 if created else 200
+        return EvidenceView.model_validate(record, from_attributes=True)
+
+    @app.get(
+        "/v1/cases/{case_id}/evidence",
+        response_model=list[EvidenceView],
+        dependencies=[Depends(require_permission("cases:read", actor))],
+    )
+    async def list_evidence(
+        case_id: UUID,
+        cases: Annotated[CaseService, Depends(service)],
+        limit: Annotated[int, Query(ge=1, le=100)] = 25,
+        offset: Annotated[int, Query(ge=0, le=10000)] = 0,
+    ):
+        return [
+            EvidenceView.model_validate(record, from_attributes=True)
+            for record in await cases.list_evidence(case_id, limit, offset)
+        ]
 
     return app

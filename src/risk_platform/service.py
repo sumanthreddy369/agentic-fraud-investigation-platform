@@ -6,8 +6,15 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from risk_platform.contracts import CaseCreate, Domain, ModelAvailability, ScoreRequest, ScoreResult
-from risk_platform.database import AuditEvent, Case, ModelScoreReference
+from risk_platform.contracts import (
+    CaseCreate,
+    Domain,
+    EvidenceCreate,
+    ModelAvailability,
+    ScoreRequest,
+    ScoreResult,
+)
+from risk_platform.database import AuditEvent, Case, EvidenceReference, ModelScoreReference
 
 
 class DomainDenied(Exception):
@@ -15,6 +22,10 @@ class DomainDenied(Exception):
 
 
 class IdempotencyConflict(Exception):
+    pass
+
+
+class CaseNotFound(Exception):
     pass
 
 
@@ -147,5 +158,65 @@ class CaseService:
             select(ModelScoreReference)
             .where(ModelScoreReference.case_id == case_id)
             .order_by(ModelScoreReference.created_at, ModelScoreReference.id)
+        )
+        return list(result)
+
+    async def add_evidence(
+        self, case_id: UUID, request: EvidenceCreate, key: str
+    ) -> tuple[EvidenceReference, bool]:
+        if await self.get(case_id) is None:
+            raise CaseNotFound()
+        payload = request.model_dump(mode="json")
+        fingerprint = hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        lookup = select(EvidenceReference).where(
+            EvidenceReference.case_id == case_id, EvidenceReference.idempotency_key == key
+        )
+
+        def replay(record: EvidenceReference) -> tuple[EvidenceReference, bool]:
+            if record.request_hash != fingerprint:
+                raise IdempotencyConflict()
+            return record, False
+
+        existing = await self.session.scalar(lookup)
+        if existing is not None:
+            return replay(existing)
+        record = EvidenceReference(
+            case_id=case_id,
+            actor_id=self.actor_id,
+            idempotency_key=key,
+            request_hash=fingerprint,
+            **payload,
+        )
+        self.session.add(record)
+        try:
+            await self.session.flush()
+            self.session.add(
+                AuditEvent(case_id=case_id, actor_id=self.actor_id, event="evidence.recorded")
+            )
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self.session.scalar(lookup)
+            if existing is None:
+                raise
+            return replay(existing)
+        return record, True
+
+    async def list_evidence(
+        self, case_id: UUID, limit: int = 25, offset: int = 0
+    ) -> list[EvidenceReference]:
+        if await self.get(case_id) is None:
+            raise CaseNotFound()
+        result = await self.session.scalars(
+            select(EvidenceReference)
+            .join(Case, EvidenceReference.case_id == Case.id)
+            .where(
+                Case.id == case_id, Case.owner_id == self.actor_id, Case.domain.in_(self.domains)
+            )
+            .order_by(EvidenceReference.created_at, EvidenceReference.id)
+            .limit(limit)
+            .offset(offset)
         )
         return list(result)

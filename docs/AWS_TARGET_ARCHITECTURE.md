@@ -8,6 +8,7 @@ This is the governing target architecture for the Agentic Fraud Detection and In
 | --- | --- | --- | --- |
 | Case API and contracts | Implemented locally | FastAPI/Pydantic routes and typed domain contracts | API Gateway in front of the deployed API; Lambda only for short event-driven handlers |
 | Durable case and audit data | Implemented locally | Async SQLAlchemy/psycopg, PostgreSQL, Alembic, append-only audit controls | RDS/Aurora PostgreSQL with KMS, private networking, backups, and IAM/secret-managed access |
+| Evidence references | Complete for local reference storage | Authorized, idempotent source ID/version/hash records with PostgreSQL immutability; source content is not fetched or verified | Governed source resolution and version/hash verification before agent use |
 | Existing model preservation | Enforced | Separate IEEE-CIS, Home Credit, and Elliptic registry entries; unavailable models fail closed | Wrap authoritative artifacts or SageMaker endpoints without changing preprocessing or class semantics |
 | Portable inference | Implemented as an optional boundary | Checksum-pinned ONNX Runtime CPU/CUDA/OpenVINO adapter | SageMaker hosting where managed deployment is justified; retain ONNX as a portable serving option |
 | API and agent guardrails | Implemented locally or as tested policy | RBAC/domain checks, limits, safe errors, model timeouts, tool/evidence budgets, citation checks, mandatory review packet | IAM and AgentCore Identity/Gateway enforcement, KMS, CloudWatch/CloudTrail evidence, deployment kill switches |
@@ -85,7 +86,7 @@ flowchart TD
 
 1. **Blocked on supplied assets:** recover authoritative models, preprocessing, datasets, AWS endpoint contracts, and golden predictions.
 2. **Partial:** immutable model-score provenance is implemented; connect exactly one verified real-model adapter without disturbing its source environment when the blocked assets arrive.
-3. **Next independent increment:** add investigation-run, evidence, checkpoint, and review-decision schemas with restart and concurrency tests.
+3. **Partial:** immutable evidence-reference storage is complete. Next add evidence-version-bound investigation records, then review-decision transitions and durable checkpoints with restart and concurrency tests.
 4. **Planned:** establish S3/Glue contracts and one idempotent batch path before adding Kinesis or Spark streaming.
 5. **Planned:** add Neptune entity mappings for one domain and verify fraud-ring queries against labeled fixtures.
 6. **Planned:** add policy/case document ingestion and benchmark keyword, vector, hybrid, and GraphRAG retrieval using NDCG, MRR, Recall@k, latency, and cost.
