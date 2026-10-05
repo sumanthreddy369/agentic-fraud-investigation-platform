@@ -31,6 +31,20 @@ This project demonstrates defense in depth for a fraud investigation service. Th
 
 ## Agent, retrieval and AI controls
 
+### Durable evidence-reference boundary
+
+`POST /v1/cases/{case_id}/evidence` requires investigator permission, the write switch,
+and an owner/domain-scoped case. Requests accept bounded opaque source IDs, source versions,
+and lowercase SHA-256 hashes only. Identity comes from authentication; domain comes from the case.
+Exact replay returns the existing row, conflicting payloads return 409, and the reference and
+`evidence.recorded` event commit atomically. PostgreSQL prevents UPDATE, DELETE, and TRUNCATE.
+`GET` uses the same case scope and bounded pagination. Read-only roles cannot add references.
+
+These are unverified reference claims, not fetched or approved evidence. The API does not resolve
+source identifiers, validate source access/content, persist excerpts, or connect these rows to the
+policy library. Retention/revocation, version-bound investigation packets, and reviewer decisions
+remain targets. Database owners can bypass triggers; production role separation remains required.
+
 Implemented in `agent_policy.py`, verified with synthetic tools. These controls become effective for real agents only when every tool and model-output path is routed through this boundary.
 
 | Threat / failure | Policy enforced | Integration boundary |

@@ -1,11 +1,13 @@
 """Safe runtime inventory: no secrets, endpoints, database URLs, or case data."""
 
+from importlib.metadata import version
+
 from risk_platform.config import Settings
 
 
 def control_catalog(settings: Settings) -> dict:
     return {
-        "release": "0.2.0",
+        "release": version("risk-investigation-platform"),
         "deployment_scope": "single-process local development",
         "enterprise_ready": False,
         "live_api": [
@@ -24,6 +26,10 @@ def control_catalog(settings: Settings) -> dict:
             "idempotent_case_creation",
             "transactional_audit",
             "postgres_append_only_audit",
+            "idempotent_case_score_provenance",
+            "postgres_append_only_scores",
+            "idempotent_case_evidence_references",
+            "postgres_append_only_evidence",
             "validated_model_output",
             "model_timeout",
             "model_circuit_breaker",
@@ -47,10 +53,10 @@ def control_catalog(settings: Settings) -> dict:
             "postgres_row_level_security",
             "distributed_quotas",
             "durable_langgraph_review_state",
-            "qdrant_acl_filters",
-            "azure_content_filters",
+            "retrieval_acl_filters",
+            "bedrock_content_controls",
             "token_and_cost_budgets",
-            "model_provenance_and_drift",
+            "model_drift_monitoring",
             "tls_kms_secret_manager",
             "egress_proxy_ssrf_protection",
             "siem_alerting",

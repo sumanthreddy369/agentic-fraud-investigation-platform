@@ -32,10 +32,12 @@ This repository provides a guarded FastAPI service around the existing IEEE-CIS,
 │   ├── script.py.mako                    # Migration template
 │   └── versions/
 │       ├── 0001_cases.py                 # Cases, audit events, and audit trigger
-│       └── 0002_model_scores.py          # Score provenance and score trigger
+│       ├── 0002_model_scores.py          # Score provenance and score trigger
+│       └── 0003_evidence.py              # Evidence references and immutability trigger
 ├── tests/                                # Fast SQLite and optional PostgreSQL tests
 │   ├── conftest.py                       # Fixtures and isolated PostgreSQL schemas
 │   ├── test_api.py                       # Routes, persistence, replay, and scoring
+│   ├── test_evidence.py                  # Evidence contracts, isolation, replay, and restart
 │   ├── test_guardrails.py                # HTTP, authorization, and validation controls
 │   ├── test_agent_policy.py              # Tool, evidence, and report policy
 │   ├── test_onnx_adapter.py              # Generated ONNX model and provider tests
@@ -188,6 +190,50 @@ The route resolves the case through owner and domain filters before inference. I
 
 ---
 
+## Durable evidence references
+
+```mermaid
+flowchart TD
+    Request["POST /v1/cases/{case_id}/evidence"] --> Permission["Investigator permission and write switch"]
+    Permission --> Scope["Owner and domain scoped case lookup"]
+    Scope --> Hash["Canonical request hash and idempotency key"]
+    Hash --> Existing{"Key already exists?"}
+    Existing -->|same payload| Replay["200 original reference"]
+    Existing -->|different payload| Conflict["409 conflict"]
+    Existing -->|new| Transaction["Insert reference and evidence.recorded audit event"]
+    Transaction --> Commit["Atomic commit; 201 reference"]
+    Commit --> Read["GET case evidence with bounded pagination"]
+```
+
+`EvidenceCreate` accepts only an opaque `source_id`, `source_version`, and lowercase SHA-256
+`content_sha256`. `CaseService.add_evidence` binds the reference to an authorized case and the
+authenticated actor. The case supplies domain and ownership; callers cannot override them.
+PostgreSQL rejects updates, deletes, and truncation. Concurrent duplicate writes return the winner
+without an extra audit event. Reviewers and auditors can read their own authorized cases but cannot
+add evidence. The write kill switch blocks additions, including replay requests.
+
+**Status: Complete for reference storage.** Hashes are caller assertions, not verified source
+content. References do not grant source access, prove truth, authorize external AI, or fetch files
+or URLs. Raw excerpts are rejected. Source resolution, ingestion, revocation/retention, investigation
+packets, and reviewer decisions are **Target (not built yet)**. A correction creates a new reference;
+this increment does not mark previous references superseded.
+
+Synthetic demonstration against a configured local API:
+
+```powershell
+$headers = @{ Authorization = "Bearer $env:RISK_API_TOKEN"; 'Idempotency-Key' = 'demo-case-1' }
+$case = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/v1/cases -Headers $headers -ContentType application/json -Body '{"domain":"ieee_cis","source_record_id":"synthetic-1","title":"Evidence demonstration"}'
+$headers['Idempotency-Key'] = 'demo-evidence-1'
+$body = @{ source_id = 'synthetic-policy'; source_version = 'v1'; content_sha256 = ('a' * 64) } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/v1/cases/$($case.id)/evidence" -Headers $headers -ContentType application/json -Body $body
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/v1/cases/$($case.id)/evidence?limit=25&offset=0" -Headers $headers
+```
+
+Repeat the evidence POST to replay it; change the hash under the same key to receive `409`.
+The example hash is synthetic and is not presented as verified evidence.
+
+---
+
 ## Model loading and ONNX inference
 
 ### Adapter startup
@@ -305,12 +351,13 @@ flowchart LR
         Command["uv run alembic upgrade head"] --> Env["migrations/env.py"]
         Env --> First["0001_cases"]
         First --> Second["0002_model_scores"]
-        Second --> Schema["Cases, audits, and score references"]
+        Second --> Third["0003_evidence"]
+        Third --> Schema["Cases, audits, score and evidence references"]
         Schema --> Triggers["PostgreSQL immutability triggers"]
     end
     subgraph Runtime["Readiness check"]
         Probe["GET /health/ready"] --> Revision["Read alembic_version"]
-        Revision --> Current{"Revision is 0002_model_scores?"}
+        Revision --> Current{"Revision is 0003_evidence?"}
         Current -->|no| NotReady["503 schema_mismatch"]
         Current -->|yes| Table["Probe CaseRecord table"]
         Table --> Available{"Query succeeds?"}
@@ -327,7 +374,7 @@ Alembic owns schema evolution. Runtime readiness requires the exact head revisio
 
 **Time:** `UTCDateTime` rejects naive values and normalizes aware values to UTC.
 
-**Status: Complete.** The head is `0002_model_scores`. Managed database provisioning is not included.
+**Status: Complete.** The head is `0003_evidence`. Managed database provisioning is not included.
 
 ---
 
@@ -352,7 +399,7 @@ flowchart TD
     end
 ```
 
-CI separates the CPU suite from the OpenVINO provider check. The committed workflow does not start PostgreSQL, so marked integration tests require a local run.
+CI separates the CPU suite from the OpenVINO provider check. The core job starts a PostgreSQL 17 service and sets `RISK_TEST_DATABASE_URL`, so marked integration tests run there.
 
 **Locked installs:** Both jobs use `uv.lock` with `--frozen`. The CPU and OpenVINO extras conflict because they install different ONNX Runtime packages.
 
@@ -371,7 +418,7 @@ CI separates the CPU suite from the OpenVINO provider check. The committed workf
 | PostgreSQL | 17 for the committed local service | `compose.yaml` |
 | Docker Compose | Needed only for the container database path | `compose.yaml` |
 | ONNX Runtime CPU | Optional `onnx-cpu` extra | `pyproject.toml` |
-| OpenVINO runtime | Optional `onnx-openvino` extra; Windows only | `pyproject.toml` |
+| OpenVINO runtime | Optional `onnx-openvino` extra; companion OpenVINO wheel on Windows | `pyproject.toml` |
 
 The repository has no `apt`, Homebrew, Winget, or Chocolatey installer. Install Python, uv, Docker, and any native PostgreSQL distribution through the OS first.
 
@@ -379,7 +426,7 @@ The repository has no `apt`, Homebrew, Winget, or Chocolatey installer. Install 
 
 ```powershell
 uv sync --frozen --python 3.11 --extra onnx-cpu
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up -d --wait
 ```
 
@@ -390,7 +437,7 @@ uv sync --frozen --python 3.11 --extra onnx-cpu
 docker compose up -d --wait
 ```
 
-Create `.env` from `.env.example` with the file-copy command supplied by the shell. The declared OpenVINO extra is Windows-only.
+Create `.env` from `.env.example` only if it does not already exist. OpenVINO is also tested on Linux in CI; see `docs/ONNX_INFERENCE.md` for provider-specific setup.
 
 ---
 
@@ -407,7 +454,7 @@ There is no separate compile step. Hatchling packages `src/risk_platform`, and `
 2. Copy the configuration and set `RISK_API_TOKEN` to at least 32 characters.
 
    ```powershell
-   Copy-Item .env.example .env
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
    ```
 
 3. Start PostgreSQL and migrate it.
@@ -434,14 +481,14 @@ Settings use the `RISK_` prefix and may be loaded from `.env`.
 | `RISK_ENVIRONMENT` | Runtime profile | `local`; accepts `local` or `test` |
 | `RISK_DATABASE_URL` | Async SQLAlchemy URL | Local PostgreSQL URL in `.env.example` |
 | `RISK_API_TOKEN` | Bearer token | Empty disables `/v1`; configured value needs 32 characters |
-| `RISK_OPERATOR_ID` | Actor and owner | `local-operator` |
+| `RISK_OPERATOR_ID` | Actor and owner | `local-investigator` |
 | `RISK_OPERATOR_ROLE` | Role | `investigator`; also `reviewer` or `auditor` |
 | `RISK_ALLOWED_DOMAINS` | Accessible domains | All three preserved domains |
 | `RISK_ONNX_MANIFESTS` | JSON domain-to-manifest map | Empty map |
 | `RISK_SCORING_ENABLED` | Scoring kill switch | `true` |
 | `RISK_WRITES_ENABLED` | Persistence kill switch | `true` |
 | `RISK_DOCS_ENABLED` | OpenAPI and Swagger switch | `true` |
-| `RISK_ALLOWED_HOSTS` | Trusted hosts | `localhost`, `127.0.0.1`, `testserver` |
+| `RISK_ALLOWED_HOSTS` | Trusted hosts | `localhost`, `127.0.0.1`, `[::1]`, `test` |
 | `RISK_MAX_BODY_BYTES` | Body limit | `65536` |
 | `RISK_MAX_HEADER_BYTES` | Header limit | `16384` |
 | `RISK_BODY_TIMEOUT_SECONDS` | Body deadline | `5` |
@@ -461,7 +508,7 @@ Settings use the `RISK_` prefix and may be loaded from `.env`.
 | `uv sync --frozen --python 3.11 --extra onnx-cpu` | Install the locked CPU development environment |
 | `uv sync --frozen --python 3.11 --extra onnx-openvino` | Install the locked Windows OpenVINO environment |
 | `docker compose up -d --wait` | Start PostgreSQL 17 on loopback |
-| `uv run alembic upgrade head` | Apply migrations through `0002_model_scores` |
+| `uv run alembic upgrade head` | Apply migrations through `0003_evidence` |
 | `uv run risk-platform` | Start `risk_platform.runtime:serve` |
 | `uv run pytest -q` | Run fast tests and any configured PostgreSQL tests |
 | `uv run pytest -q tests/test_onnx_adapter.py` | Run generated-model adapter tests |
@@ -548,7 +595,7 @@ Content-Type: application/json
 
 The feature map must match the manifest. Without a valid manifest, the domain returns `503`.
 
-**Control-catalog limitation:** `/v1/guardrails` is static metadata. Its release value and some pending-provider labels lag the package version and AWS target documents. Runtime behavior and the status table below are authoritative.
+`/v1/guardrails` reports the installed package version and the implemented controls. Its inventory is static metadata, not a deployment health check or verification of model/source availability.
 
 ---
 
@@ -562,6 +609,7 @@ The feature map must match the manifest. Without a valid manifest, the domain re
 | Local bearer authentication and role/domain authorization | Complete |
 | PostgreSQL cases, audit events, and score provenance | Complete |
 | Idempotent case and score writes | Complete |
+| Immutable, idempotent case-scoped evidence references | Complete |
 | PostgreSQL append-only triggers | Complete |
 | Alembic migrations and revision-aware readiness | Complete |
 | ONNX Runtime and OpenVINO adapter validation | Complete |
@@ -569,8 +617,8 @@ The feature map must match the manifest. Without a valid manifest, the domain re
 | Production model binaries and manifests | Stubbed |
 | IEEE-CIS, Home Credit, and Elliptic artifact integration | Partial |
 | Guarded investigation policy contracts | Partial |
-| Static control-catalog metadata | Partial |
-| PostgreSQL execution in GitHub Actions | Target (not built yet) |
+| Static control-catalog metadata | Complete as an inventory; not a health check |
+| PostgreSQL execution in GitHub Actions | Complete in workflow configuration |
 | LangGraph agents and supervisor | Target (not built yet) |
 | MCP tool servers | Target (not built yet) |
 | Bedrock or Azure OpenAI invocation | Target (not built yet) |
@@ -618,6 +666,7 @@ The runner creates a cluster under `.test-runtime`, selects a random loopback po
 | Test file | Coverage |
 |---|---|
 | `tests/test_api.py` | Routes, model state, persistence, replay, and score provenance |
+| `tests/test_evidence.py` | Evidence validation, roles, owner/domain isolation, replay, and restart |
 | `tests/test_guardrails.py` | Auth, hosts, framing, limits, errors, and headers |
 | `tests/test_agent_policy.py` | Tools, budgets, evidence, citations, egress, and review |
 | `tests/test_onnx_adapter.py` | Hashes, manifests, features, outputs, CPU, and OpenVINO |

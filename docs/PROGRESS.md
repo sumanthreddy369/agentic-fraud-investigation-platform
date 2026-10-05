@@ -1,5 +1,37 @@
 # Implementation progress
 
+## Increment 7 — 2026-10-04 — durable evidence references
+
+Verified clean `main` against `origin/main` at `e1b50db`; no authoritative model manifests,
+artifacts, preprocessing contracts, or golden fixtures were supplied in this checkout.
+All model domains remain unavailable by default. Followed the independent evidence-storage
+portion of Phase 1 without connecting an agent or fabricating predictions.
+
+Added `POST` and paginated `GET /v1/cases/{case_id}/evidence`, strict bounded source ID/version/hash
+contracts, owner/domain authorization, investigator-only writes, write-switch enforcement,
+canonical-request idempotency, and atomic `evidence.recorded` audit events. Migration
+`0003_evidence` adds the synchronized ORM table and PostgreSQL append-only trigger.
+The readiness check now requires that revision. Updated the README workflow and static control
+catalog, including correcting the stale claim that CI did not run PostgreSQL tests.
+
+Verification: **99 passed, 1 skipped** on Python 3.11 with the CPU extra and a disposable
+PostgreSQL 17 cluster. The skip is the optional OpenVINO provider, which is absent in this mutually
+exclusive CPU environment. Tests cover prior-revision upgrade, migration round-trip/schema parity,
+concurrent replay, persistence after restart, authorization, input bounds, append-only rejection,
+and rollback when audit insertion fails. Ruff lint/format, Bandit, and all 14 synthetic guardrail
+demo checks passed. The locked runtime dependency audit reported no known vulnerabilities;
+Windows blocked its generated launcher, so the same audit ran via `python -m pip_audit`.
+The disposable cluster was stopped and removed. Remote CI results must be
+checked against the published commit; local results are not a claim that remote CI passed.
+
+**Complete:** evidence-reference storage. **Target (not built yet):** source resolution/access
+verification, content-hash verification, revocation/retention, durable investigation packets,
+reviewer endpoints, LangGraph/MCP, retrieval, external AI, and AWS deployment. A submitted hash is
+an unverified claim, not proof of source content or approval for external use.
+
+Next increment: evidence-version-bound investigation records, then authenticated human-review
+transitions with reviewer separation and concurrency/replay tests.
+
 ## Increment 1 — 2026-09-25
 
 Completed a local, additive API foundation. No files in the three existing risk repositories were changed.

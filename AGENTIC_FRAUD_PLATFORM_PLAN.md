@@ -86,7 +86,7 @@ Exit: each adapter has a verified source contract and baseline, or is explicitly
 
 Exit: a case can reference a verified model result; invalid input is rejected; unavailable models return explicit errors; adapter predictions match the baseline within documented tolerances. Migrations apply to a clean database and an upgrade fixture.
 
-Current progress: the case API, immutable score-reference migration, scoring guardrails, model/schema/backend/artifact provenance, and unavailable-model behavior are implemented and tested. Adapter parity against a preserved real model remains blocked on the authoritative artifacts and golden fixtures.
+Current progress: the case API, immutable score-reference migration, scoring guardrails, model/schema/backend/artifact provenance, unavailable-model behavior, and immutable case-scoped evidence-reference API are implemented and tested. Evidence references store caller-supplied source IDs, versions, and hashes; source resolution and content verification are not implemented. Adapter parity against a preserved real model remains blocked on the authoritative artifacts and golden fixtures.
 
 ### Phase 2: ingestion and evidence retrieval
 
@@ -156,7 +156,7 @@ Core records: `cases`, `model_score_references`, `evidence_items`, `investigatio
 
 ## Immediate next work and external inputs
 
-Phase 0 and the real-adapter portion of Phase 1 remain blocked on the authoritative portfolio path, dataset/model locations, existing AWS endpoint configuration, and golden predictions. The next independent implementation increment is the durable investigation/evidence/review schema and state-transition API from Phases 3-4. Later AWS deployment requires identity and Bedrock configuration. Credentials belong in AWS Secrets Manager, Parameter Store, or local untracked environment configuration, never in this plan or Git.
+Phase 0 and the real-adapter portion of Phase 1 remain blocked on the authoritative portfolio path, dataset/model locations, existing AWS endpoint configuration, and golden predictions. Immutable evidence-reference storage is complete. The next independent increment is durable investigation records bound to evidence versions, followed by authenticated human-review state transitions from Phases 3-4. Source access and hash verification remain required before evidence enters a real agent runtime. Later AWS deployment requires identity and Bedrock configuration. Credentials belong in AWS Secrets Manager, Parameter Store, or local untracked environment configuration, never in this plan or Git.
 
 Redis, Ray, Qdrant, Langfuse, and Milvus are deliberately conditional decisions. Add them only when a workload benchmark, portability goal, or deployment requirement demonstrates a concrete benefit. The AWS target architecture is the default.
 

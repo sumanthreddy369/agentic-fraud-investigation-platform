@@ -86,3 +86,19 @@ class CaseScoreView(Contract):
     backend: str | None
     artifact_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None
     created_at: datetime
+
+
+class EvidenceCreate(Contract):
+    # Opaque identifiers only: these fields are never fetched as URLs or file paths.
+    source_id: Annotated[str, Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9_.:-]+$")]
+    source_version: Annotated[
+        str, Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
+    ]
+    content_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+
+
+class EvidenceView(EvidenceCreate):
+    id: UUID
+    case_id: UUID
+    actor_id: str
+    created_at: datetime
