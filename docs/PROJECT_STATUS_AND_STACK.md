@@ -102,3 +102,5 @@ GitHub or S3. A private, versioned artifact upload is part of the AWS deployment
 Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). This supersedes earlier pending labels for those analyses; serving qualification remains pending.
 
 Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERVING.md) now pass. This supersedes the earlier export-pending status. Cloud deployment and production approval remain pending.
+
+[Container concurrency assessment](RICHER_CONTAINER_ASSESSMENT.md): v3 golden predictions pass, but a four-client burst produced 22 capacity-related 503 responses out of 40 requests. Multi-replica load acceptance remains pending.
