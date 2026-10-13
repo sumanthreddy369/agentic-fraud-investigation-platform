@@ -1,5 +1,7 @@
 # Agentic Fraud Investigation Platform
 
+[Latest status, model comparison, code and tech stack](docs/PROJECT_STATUS_AND_STACK.md)
+
 [Current delivery workflow and completion gates](docs/DELIVERY_WORKFLOW.md) covers the stronger model, temporary AWS assessment, and investigation agents.
 
 [EDA and results report](docs/EDA_AND_RESULTS.md) includes analysis coverage, model

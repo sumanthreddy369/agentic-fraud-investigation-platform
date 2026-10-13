@@ -4,6 +4,13 @@ Updated October 13, 2026. This is the execution order for the production-style
 portfolio. It supersedes older planning statuses, without changing historical results.
 It is a delivery plan, not a claim that the target services are implemented.
 
+## Required final environment
+
+The complete portfolio demonstration must run on AWS: model serving, Kubernetes,
+Terraform, lifecycle pipelines, monitoring and investigation agents. Local validation
+is preparation. Deploy in cost-bounded stages, capture evidence, then remove the
+demonstration resources. See [current status and stack](PROJECT_STATUS_AND_STACK.md).
+
 ## Current checkpoint
 
 | Area | Verified status |
