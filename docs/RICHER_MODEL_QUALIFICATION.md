@@ -48,3 +48,5 @@ Run `uv run --extra training --extra onnx-cpu python scripts/qualify_richer_nume
 Six focused tests passed for threshold ties, no-review precision, finite logit endpoints and metric calculations. Ruff lint/format passed.
 
 The audit period was already examined. Identity availability, source feature semantics, categorical inputs, uncertainty, temporal stability, inference latency, ONNX export and parity remain pending. Neither calibration nor a policy is automatically promoted from this audit. The serving model remains the verified 15-feature random forest. No AWS compute was created for this run.
+
+Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERVING.md) now pass. This supersedes the earlier export-pending status. Cloud deployment and production approval remain pending.

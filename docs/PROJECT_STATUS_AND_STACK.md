@@ -100,3 +100,5 @@ remain excluded. This update publishes model documentation, not model binaries t
 GitHub or S3. A private, versioned artifact upload is part of the AWS deployment work.
 
 Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). This supersedes earlier pending labels for those analyses; serving qualification remains pending.
+
+Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERVING.md) now pass. This supersedes the earlier export-pending status. Cloud deployment and production approval remain pending.
