@@ -87,4 +87,3 @@ resource "kubernetes_job_v1" "migrate" {
   wait_for_completion = true
   timeouts { create = "5m" }
 }
-
