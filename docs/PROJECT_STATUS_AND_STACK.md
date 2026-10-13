@@ -98,3 +98,5 @@ GitHub contains source, aggregate comparisons, charts, workflow and limitations.
 Raw data, model binaries, golden feature payloads, credentials and Terraform state
 remain excluded. This update publishes model documentation, not model binaries to
 GitHub or S3. A private, versioned artifact upload is part of the AWS deployment work.
+
+Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). This supersedes earlier pending labels for those analyses; serving qualification remains pending.

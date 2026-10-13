@@ -46,3 +46,5 @@ The output folder must not already exist. Private aggregate JSON and feature inv
 are saved in artifacts/ieee_cis/richer-numeric-v1; raw rows are not published.
 
 [Training code](../scripts/train_richer_numeric.py) | [Evidence gallery](MILESTONE_GALLERY.md)
+
+Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). This supersedes earlier pending labels for those analyses; serving qualification remains pending.
