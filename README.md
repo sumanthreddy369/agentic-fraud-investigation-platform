@@ -738,3 +738,11 @@ The runner creates a cluster under `.test-runtime`, selects a random loopback po
 | `tests/test_postgres.py` | Migrations, constraints, triggers, concurrency, and restart |
 
 The PostgreSQL fixture accepts only `postgresql+psycopg` URLs and drops only its randomized schema.
+
+## October 2026 measured results
+
+- [Expanded EDA, model comparison, calibration and subgroup tables](docs/FULL_EDA_COMPARISON.md)
+- [Local Kubernetes recovery/scaling and Terraform rebuild proof](docs/DEPLOYMENT_PROOF.md)
+
+The local proof cluster was removed after testing. Cloud serving and investigation
+agents remain targets; these results are an educational retrospective evaluation.

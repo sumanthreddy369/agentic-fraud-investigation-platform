@@ -6,12 +6,12 @@ No IEEE-CIS, Home Credit, or Elliptic dataset file is committed to this reposito
 On October 11, 2026, the official IEEE-CIS competition ZIP was downloaded after the
 user completed Kaggle access. All five CSVs are stored locally in ignored
 `data/raw/ieee_cis/`. Training-table profiling, checksums, and chronological split
-outputs are in ignored `artifacts/ieee_cis/run-001/`. No S3 upload or Glue table is
-verified. Home Credit and Elliptic source files remain unavailable.
+outputs are in ignored `artifacts/ieee_cis/run-001/`. The original ZIP upload to the private S3 learning bucket was verified on October 11;
+object-version pinning and Glue tables remain pending. Home Credit and Elliptic source files remain unavailable.
 
 The repository includes a local IEEE-CIS training-table profiling and temporal-split
 program; see [the local workflow](LOCAL_DATA_WORKFLOW.md). The first real training-table
-profiling run completed locally; S3 upload remains pending. Tests use synthetic records
+profiling run completed locally; the original ZIP was uploaded to the private S3 learning bucket. Tests use synthetic records
 created during the test run. Production onboarding still requires approved use, object
 versions, validated preprocessing, and model approval.
 

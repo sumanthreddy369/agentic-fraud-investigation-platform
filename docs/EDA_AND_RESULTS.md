@@ -1,6 +1,10 @@
 # EDA model selection and verification results
 
-Status as of October 13, 2026. Initial training-table profiling is complete; comprehensive EDA and multi-model selection are not complete. All reported model metrics use the chronological validation partition, not an independent final test set.
+Historical initial-baseline report, superseded for EDA and model comparison by
+[FULL_EDA_COMPARISON.md](FULL_EDA_COMPARISON.md) and for infrastructure by
+[DEPLOYMENT_PROOF.md](DEPLOYMENT_PROOF.md). The pending labels below describe the earlier stage.
+
+At that earlier stage, initial training-table profiling was complete; comprehensive EDA and multi-model selection are not complete. All reported model metrics use the chronological validation partition, not an independent final test set.
 
 ## EDA coverage
 

@@ -10,8 +10,8 @@ terraform {
 
 # Deliberately targets the local cluster, never the user's active cloud context.
 provider "kubernetes" {
-  config_path    = pathexpand("~/.kube/config")
-  config_context = "docker-desktop"
+  config_path    = var.kubeconfig
+  config_context = "kind-risk-proof"
 }
 
 variable "image" {
@@ -34,8 +34,9 @@ resource "kubernetes_namespace_v1" "risk" {
 
 # Credentials and model artifacts are provisioned separately, outside Terraform state.
 # Secret risk-runtime: RISK_API_TOKEN and RISK_DATABASE_URL.
-# PVC risk-models: verified ONNX model and manifest.json, mounted read-only.
+# kind host mount: verified ONNX model and manifest.json, mounted read-only.
 resource "kubernetes_deployment_v1" "api" {
+  depends_on = [kubernetes_job_v1.migrate]
   metadata {
     name      = "risk-api"
     namespace = kubernetes_namespace_v1.risk.metadata[0].name
@@ -58,7 +59,11 @@ resource "kubernetes_deployment_v1" "api" {
           image             = var.image
           image_pull_policy = "IfNotPresent"
           port { container_port = 8000 }
-          env_from { secret_ref { name = "risk-runtime" } }
+          env_from {
+            secret_ref {
+              name = "risk-runtime"
+            }
+          }
           env {
             name  = "RISK_ALLOWED_HOSTS"
             value = "[\"localhost\",\"127.0.0.1\",\"risk-api\"]"
@@ -111,7 +116,7 @@ resource "kubernetes_deployment_v1" "api" {
         }
         volume {
           name = "models"
-          persistent_volume_claim { claim_name = "risk-models" }
+          host_path { path = "/risk-models/model-v2" }
         }
       }
     }

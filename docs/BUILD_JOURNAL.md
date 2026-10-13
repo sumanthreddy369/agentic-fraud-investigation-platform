@@ -7,6 +7,20 @@ the data, model lifecycle, workload infrastructure, release, and monitoring foun
 Agents use LangGraph, scoped MCP tools, and retrieved evidence to produce cited review
 packets. Authenticated humans remain authoritative; no autonomous enforcement.
 
+## October 13, 2026 — expanded analysis and local infrastructure proof
+
+Completed full-source descriptive EDA, serving-feature correlations, sampled wider
+correlations, three-model temporal comparison, calibration and business-subgroup
+analysis. Histogram boosting won selection; a converter failure required a clearly
+identified calibrated random-forest deployment fallback. Calibration was not an
+improvement in audit Brier score. See [analysis](FULL_EDA_COMPARISON.md).
+
+Proved local Kubernetes deployment, API pod replacement, manual 1-to-3 scaling,
+Terraform no-drift and destroy/rebuild, with 60 matching golden predictions.
+Removed the disposable cluster afterward. See [proof and reproduction](DEPLOYMENT_PROOF.md).
+These supersede the earlier pending infrastructure status below. Agents, external
+retrieval/MCP, MLflow/Airflow, monitoring dashboards and AWS serving remain targets.
+
 ## October 13 2026 model and API milestone
 
 Trained a new IEEE-CIS numeric random-forest baseline, exported ONNX, checked full
