@@ -21,7 +21,8 @@ and was previously examined. AP means average precision. Threshold metrics use 0
 The selection winner was chosen on the selection period, not this audit table.
 Calibration did not improve random-forest audit Brier score. The deployed version
 is `ieee-rf15-sigmoid-v2`. Earlier v1 used a different training budget and is not
-included as a same-split competitor. No richer-feature successor has been trained yet.
+included as a same-split competitor. A [400-feature research candidate](RICHER_MODEL_CANDIDATE.md) has now been trained;
+its audit AP is 0.4401. It is not exported or promoted.
 
 [Full comparisons, calibration bins and subgroup tables](FULL_EDA_COMPARISON.md)
 include the omitted logistic calibrated variant and evaluation caveats.
