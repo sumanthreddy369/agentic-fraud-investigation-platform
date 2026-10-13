@@ -1,5 +1,13 @@
 # Build journal and milestone evidence
 
+## October 13, 2026 — delivery workflow updated
+
+Added [the stage-by-stage workflow](DELIVERY_WORKFLOW.md) for stronger model
+qualification, lifecycle/monitoring, a temporary AWS assessment and bounded agents.
+This is planning work only; no new model training or cloud deployment occurred in
+this update. The next implementation is the data/evaluation contract and richer-feature
+model comparison.
+
 ## Final objective
 
 Build a fraud/risk platform that culminates in bounded investigation agents, after

@@ -1,5 +1,7 @@
 # Agentic Fraud Investigation Platform
 
+[Current delivery workflow and completion gates](docs/DELIVERY_WORKFLOW.md) covers the stronger model, temporary AWS assessment, and investigation agents.
+
 [EDA and results report](docs/EDA_AND_RESULTS.md) includes analysis coverage, model
 selection rationale, comparison tables, per-column blank counts, and measured tests.
 
@@ -10,8 +12,9 @@ This repository provides a guarded FastAPI service around the existing IEEE-CIS,
 **Updated portfolio plan:** demonstrate ML Platform Engineering and AI Infrastructure
 Engineering through versioned fraud/risk models, Kubernetes scheduling/scaling/recovery,
 MLflow + Airflow model lifecycle and pipelines, Terraform + CI/CD provisioning and
-releases, and Prometheus + Grafana monitoring. These are **Target (not built yet)**
-capabilities except for the existing CI checks and model-adapter boundary. See the
+releases, and Prometheus + Grafana monitoring. Local Kubernetes/Terraform lifecycle proof, trained ONNX baselines and CI checks are
+verified. MLflow, Airflow, monitoring dashboards, AWS serving and live agents are
+**Target (not built yet)**. See the
 [updated architecture plan](docs/AWS_TARGET_ARCHITECTURE.md#updated-portfolio-plan--october-11-2026).
 
 [Public repository](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform) | [CI runs](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform/actions)
