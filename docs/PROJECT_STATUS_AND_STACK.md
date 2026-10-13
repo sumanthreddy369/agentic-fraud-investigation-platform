@@ -106,3 +106,5 @@ Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERV
 [Container concurrency assessment](RICHER_CONTAINER_ASSESSMENT.md): v3 golden predictions pass, but a four-client burst produced 22 capacity-related 503 responses out of 40 requests. Multi-replica load acceptance remains pending.
 
 [Three-replica bounded replay](REPLICA_REPLAY_RESULTS.md) subsequently passed 60/60 requests with zero retries and exact parity. This is local Docker replay, not AWS or Kubernetes load-balancer validation.
+
+[Versioned feature builder](IEEE_FEATURE_CONTRACT.md) implemented and matched against all ten real golden input vectors. Database-backed replay integration remains pending.
