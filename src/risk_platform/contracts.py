@@ -1,9 +1,17 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    model_validator,
+)
 
 FeatureName = Annotated[str, Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_.-]+$")]
 FeatureValue = (
@@ -101,4 +109,33 @@ class EvidenceView(EvidenceCreate):
     id: UUID
     case_id: UUID
     actor_id: str
+    created_at: datetime
+
+
+Disposition = Literal["escalate", "no_further_action", "insufficient_evidence"]
+
+
+class InvestigationCreate(Contract):
+    disposition: Disposition
+    summary: Annotated[str, Field(min_length=1, max_length=4000, pattern=r"\S")]
+    evidence_ids: Annotated[list[UUID], Field(max_length=20)]
+
+    @model_validator(mode="after")
+    def validate_citations(self) -> Self:
+        if len(set(self.evidence_ids)) != len(self.evidence_ids):
+            raise ValueError("Duplicate evidence references")
+        if not self.evidence_ids and self.disposition != "insufficient_evidence":
+            raise ValueError("Evidence is required for this disposition")
+        return self
+
+
+class InvestigationView(Contract):
+    id: UUID
+    case_id: UUID
+    actor_id: str
+    disposition: Disposition
+    summary: str
+    evidence: Annotated[list[EvidenceView], Field(max_length=20)]
+    status: Literal["awaiting_review"]
+    requires_human_review: Literal[True] = True
     created_at: datetime

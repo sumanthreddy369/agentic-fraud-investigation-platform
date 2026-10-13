@@ -11,6 +11,7 @@ PERMISSIONS = {
             "cases:create",
             "scores:create",
             "evidence:create",
+            "investigations:create",
             "audit:read",
             "models:read",
             "models:score",
@@ -31,7 +32,10 @@ def require_permission(permission: str, authentication):
             raise HTTPException(503, "Case writes are disabled")
         if permission == "models:score" and not settings.scoring_enabled:
             raise HTTPException(503, "Model scoring is disabled")
-        if permission in {"scores:create", "evidence:create"} and not settings.writes_enabled:
+        if (
+            permission in {"scores:create", "evidence:create", "investigations:create"}
+            and not settings.writes_enabled
+        ):
             raise HTTPException(503, "Case writes are disabled")
         return identity
 

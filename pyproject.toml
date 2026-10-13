@@ -27,6 +27,10 @@ onnx-openvino = [
   "onnxruntime-openvino==1.24.1",
   "openvino==2025.4.1; sys_platform == 'win32'",
 ]
+training = [
+    "scikit-learn>=1.6,<2",
+    "skl2onnx>=1.18,<2",
+]
 
 [project.scripts]
 risk-platform = "risk_platform.runtime:serve"

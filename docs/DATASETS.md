@@ -2,13 +2,22 @@
 
 ## Repository data status
 
-No IEEE-CIS, Home Credit, or Elliptic dataset file is committed to this repository. No local file, S3 object, Glue table, checksum manifest, or license approval has been supplied to this project. The existing source repositories refer to these datasets, but their inspected Git trees do not contain the authoritative data.
+No IEEE-CIS, Home Credit, or Elliptic dataset file is committed to this repository.
+On October 11, 2026, the official IEEE-CIS competition ZIP was downloaded after the
+user completed Kaggle access. All five CSVs are stored locally in ignored
+`data/raw/ieee_cis/`. Training-table profiling, checksums, and chronological split
+outputs are in ignored `artifacts/ieee_cis/run-001/`. No S3 upload or Glue table is
+verified. Home Credit and Elliptic source files remain unavailable.
 
-This repository contains contracts and plans only. Tests use synthetic records created during the test run. A dataset becomes usable only after its source, permitted use, object version, checksum, schema, and owner are recorded and approved.
+The repository includes a local IEEE-CIS training-table profiling and temporal-split
+program; see [the local workflow](LOCAL_DATA_WORKFLOW.md). The first real training-table
+profiling run completed locally; S3 upload remains pending. Tests use synthetic records
+created during the test run. Production onboarding still requires approved use, object
+versions, validated preprocessing, and model approval.
 
 | Domain key | Dataset | Prediction unit | Target/label | Current status |
 | --- | --- | --- | --- | --- |
-| `ieee_cis` | IEEE-CIS Fraud Detection | Online transaction | Binary `isFraud` probability | Authoritative files and preprocessing contract missing |
+| `ieee_cis` | IEEE-CIS Fraud Detection | Online transaction | Binary `isFraud` probability | Official files downloaded; initial local profiling complete; feature preprocessing and model contract pending |
 | `home_credit` | Home Credit Default Risk | Loan application, with related historical tables | Binary repayment/default target | Authoritative files, training implementation, and saved model missing |
 | `elliptic` | Elliptic Bitcoin transaction graph | Transaction node in a directed temporal graph | Licit, illicit, or unknown node label | Graph builder, dataset files, feature mapping, and saved classifier missing |
 

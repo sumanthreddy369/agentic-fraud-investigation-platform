@@ -24,7 +24,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: uv sync --frozen --python 3.11 --extra onnx-cpu
+      - run: uv sync --frozen --python 3.11 --extra onnx-cpu --extra training
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest
