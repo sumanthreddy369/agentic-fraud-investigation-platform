@@ -6,6 +6,23 @@ It is a delivery plan, not a claim that the target services are implemented.
 
 ## Required final environment
 
+### Stack decision — October 14, 2026
+
+The user approved AWS as the deployment platform. Keep GitHub Actions for CI;
+use Terraform and Kubernetes for the cloud demonstration. Add OpenTelemetry
+instrumentation and a Collector, Prometheus metrics and Grafana dashboards.
+Choose a trace storage backend before claiming end-to-end trace visibility.
+Keep MLflow and Airflow for model lineage and scheduled pipelines. Use Amazon
+Bedrock as the future LangGraph investigation language-model provider, behind
+bounded calls, scoped MCP tools, permitted retrieval and human approval.
+These are implementation targets, not deployed services.
+
+Jenkins, Spinnaker, BlazeMeter, Splunk, Dynatrace, Datadog, Google Model Garden
+and NVIDIA NIM are optional later exercises, not required parallel dependencies.
+Do not activate subscriptions or GPU resources merely to expand the stack list.
+Keep transaction features, evidence, tokens and request bodies out of telemetry.
+Validate AWS credit eligibility per service before launching the demonstration.
+
 The complete portfolio demonstration must run on AWS: model serving, Kubernetes,
 Terraform, lifecycle pipelines, monitoring and investigation agents. Local validation
 is preparation. Deploy in cost-bounded stages, capture evidence, then remove the
@@ -17,7 +34,7 @@ demonstration resources. See [current status and stack](PROJECT_STATUS_AND_STACK
 | --- | --- |
 | Data | IEEE-CIS downloaded; original ZIP uploaded to private S3; object-version pinning pending |
 | Analysis | Descriptive EDA, same-split comparisons, calibration and winner subgroups completed; wider correlations sampled |
-| Model | Calibrated 15-feature random forest exported to ONNX; histogram boosting won comparison but export failed |
+| Model | Richer 400-feature histogram boosting v3 exported to ONNX and qualified locally; original baselines preserved |
 | API | Guarded scoring, cases, score provenance, evidence references and immutable investigation submissions implemented |
 | Infrastructure | Local Kubernetes deployment, API pod recovery, manual scaling and Terraform rebuild verified; cluster removed |
 | AWS serving | Target (not built yet); no AWS fraud-service deployment verified |
@@ -41,8 +58,10 @@ Home Credit and Elliptic boundaries remain separate and unavailable without arti
 | 7. Investigation agents | Add durable LangGraph orchestration, scoped MCP tools, permitted retrieval and authoritative review transitions | Case isolation, cited evidence, abstention, prompt-injection resistance, bounded calls/cost, checkpoint recovery and human-review tests |
 | 8. Final portfolio assessment | Compare manual review with agent-assisted review on the same frozen cases; publish measured results and limitations | Review-time measurement method, reviewer corrections, citation accuracy, escalation quality, per-case cost, architecture diagram and reproducible demo instructions |
 
-**Immediate next implementation task:** stage 1 and a richer-feature candidate
-comparison in stage 2. Do not deploy the current baseline merely to label it production-ready.
+**Current implementation task:** lifecycle and cloud deployment preparation after
+richer-model qualification and [database replay verification](DATABASE_REPLAY_RESULTS.md).
+S3 object-version pinning and real-world feature-availability validation remain open.
+Do not describe the portfolio model as approved for business production.
 Failure at a gate produces a documented finding and remediation; it does not silently
 promote a weaker candidate or convert an unimplemented service into a completed task.
 

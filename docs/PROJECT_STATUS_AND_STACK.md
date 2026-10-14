@@ -107,4 +107,8 @@ Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERV
 
 [Three-replica bounded replay](REPLICA_REPLAY_RESULTS.md) subsequently passed 60/60 requests with zero retries and exact parity. This is local Docker replay, not AWS or Kubernetes load-balancer validation.
 
-[Versioned feature builder](IEEE_FEATURE_CONTRACT.md) implemented and matched against all ten real golden input vectors. Database-backed replay integration remains pending.
+[Versioned feature builder](IEEE_FEATURE_CONTRACT.md) implemented and matched against all ten real golden input vectors.
+
+[Database-backed replay](DATABASE_REPLAY_RESULTS.md) now passes ten golden predictions,
+duplicate delivery after an API restart and changed-payload rejection on local
+PostgreSQL 17. AWS deployment remains pending.
