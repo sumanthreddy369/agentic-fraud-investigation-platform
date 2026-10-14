@@ -31,13 +31,26 @@ EKS reported 1.34–1.37 in STANDARD_SUPPORT. No suitable existing operator IAM 
 was found: only service-linked and Lambda test roles were listed.
 
 Prepared access bootstrap: `scripts/prepare_aws_operator.py` writes two private
-JSON documents for `risk-portfolio-demo-operator`. The trust policy permits only
-the current account root principal to assume the role (explicit PrincipalArn
+JSON documents for `risk-portfolio-demo-operator`. The trust policy requires an
+explicitly approved same-account non-root IAM user or role (PrincipalArn
 condition). Its IAM permission is only `eks:DescribeCluster` on the named demo
 cluster in us-east-1. Create with a maximum session duration of 3600 seconds only
 after action-time approval. It does not grant general AWS administration or create
 access keys. The separate Terraform EKS access policy grants administration of the
 demo cluster and must be included in the subsequent deployment/access review.
+
+Verification finding: the initially approved root-only trust role was created,
+but STS rejected its use because root accounts cannot assume roles. The role has
+no working operator session and no EKS cluster access yet. The generator now
+rejects root principals. Changing the live trust to a named non-root identity
+requires separate approval; no broad account-wide trust was substituted.
+
+After the user approved the correction, `risk-portfolio-user` was created with
+AWSCloudShellFullAccess and an inline permission to assume only the demo operator
+role. The role trust update names this specific user. Console password/MFA setup
+is a user handoff; no access keys were created. A successful non-root operator
+session remains to be verified before deployment. Four generator tests pass,
+including rejection of root, foreign-account and wildcard principals.
 
 Before apply: review the complete saved plan, provide an approved operator role,
 check Free Tier plan/service eligibility, confirm current regional rates, set a
