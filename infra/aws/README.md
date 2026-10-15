@@ -95,6 +95,24 @@ pass; the current review plan is not authorization to deploy.
 
 ## Execution and evidence
 
+For durable state, the prepared `backend.tf.example` and `backend.hcl.example`
+select a dedicated state key in the existing private project bucket, with S3
+native locking and encryption. Replace the bucket placeholder in a private local
+copy. These examples have not been initialized against S3. First recheck bucket
+versioning, encryption, public-access block and access to
+the exact prefix. Copy the Terraform example to `backend.tf`, then initialize with
+`terraform init -backend-config=<private-backend-config>`. Do not use `/tmp` as the sole
+state store for an apply. Preserve the bucket and its original dataset during demo
+teardown. State can contain sensitive values; never publish it or its backups.
+
+Provisioning requires an administrator/deployment session. The successfully
+verified operator role deliberately cannot create the AWS resources. The previous
+administrator session expired after switching to the IAM operator; authenticate
+the provisioning identity before attempting any apply. The user approved the
+28-resource plan, including its cluster/node roles and operator cluster-admin
+association, after successful operator verification. This approval does not imply
+that an apply has run or that the remaining preflight gates passed.
+
 1. Initialize from the committed lock file with short-lived AWS authentication.
 2. Supply account_id, operator_role_arn, kubernetes_version and expires_at in an
    ignored variables file. State and saved plans stay private and protected.
