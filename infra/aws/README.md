@@ -69,10 +69,14 @@ No total deployment estimate has yet been approved or guaranteed.
 ### October 15 preflight
 
 The account API reports an ACTIVE FREE plan and $158.91 remaining credits.
-STS confirms the current console session is still root. Read-back of the operator
-role confirms its trust condition is restricted to `risk-portfolio-user`, with a
-3600-second maximum session. This is policy verification, not a successful
-non-root sign-in or AssumeRole test.
+Read-back of the operator role confirms its trust condition is restricted to
+`risk-portfolio-user`, with a 3600-second maximum session. The initial session was
+root. After the user signed in as `risk-portfolio-user`, STS verified that identity
+and successfully assumed `risk-portfolio-demo-operator` for 900 seconds. Only the
+assumed role ARN was printed; credentials were not displayed or saved. Evidence:
+`artifacts/aws-preflight/operator-success-20261015.jpg` (private, excluded from Git).
+The role still only permits describing the named cluster; this does not prove
+provisioning permissions or Kubernetes administration.
 
 Terraform 1.14.9 was downloaded from HashiCorp in CloudShell and its ZIP checksum
 verified. The large AWS provider exhausted CloudShell's 1 GB persistent home
