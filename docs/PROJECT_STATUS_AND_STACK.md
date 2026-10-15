@@ -1,6 +1,6 @@
 # Project status, models and technology stack
 
-Updated October 13, 2026. Portfolio project: production-style engineering with
+Updated October 15, 2026. Portfolio project: production-style engineering with
 historical IEEE-CIS replay, not a live banking integration or approved production model.
 
 ## Completed model work
@@ -19,10 +19,12 @@ and was previously examined. AP means average precision. Threshold metrics use 0
 | Constant prior | 0.5000 | 0.0344 | 0.03323 | Undefined | 0.000 | Reference baseline |
 
 The selection winner was chosen on the selection period, not this audit table.
-Calibration did not improve random-forest audit Brier score. The deployed version
-is `ieee-rf15-sigmoid-v2`. Earlier v1 used a different training budget and is not
+Calibration did not improve random-forest audit Brier score. The local Kubernetes proof used
+`ieee-rf15-sigmoid-v2`. Earlier v1 used a different training budget and is not
 included as a same-split competitor. A [400-feature research candidate](RICHER_MODEL_CANDIDATE.md) has now been trained;
-its audit AP is 0.4401. It is not exported or promoted.
+its audit AP is 0.4401. The 400-feature model is now exported as
+`ieee-hgb400-raw-v3` and qualified through local ONNX/API/container and database
+replay checks. AWS deployment remains pending; see the linked qualification reports below.
 
 [Full comparisons, calibration bins and subgroup tables](FULL_EDA_COMPARISON.md)
 include the omitted logistic calibrated variant and evaluation caveats.

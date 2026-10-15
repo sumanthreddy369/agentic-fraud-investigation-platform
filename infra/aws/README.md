@@ -66,6 +66,29 @@ Use the [VPC](https://aws.amazon.com/vpc/pricing/),
 [EBS](https://aws.amazon.com/ebs/pricing/) regional rates for the final estimate.
 No total deployment estimate has yet been approved or guaranteed.
 
+### October 15 preflight
+
+The account API reports an ACTIVE FREE plan and $158.91 remaining credits.
+STS confirms the current console session is still root. Read-back of the operator
+role confirms its trust condition is restricted to `risk-portfolio-user`, with a
+3600-second maximum session. This is policy verification, not a successful
+non-root sign-in or AssumeRole test.
+
+Terraform 1.14.9 was downloaded from HashiCorp in CloudShell and its ZIP checksum
+verified. The large AWS provider exhausted CloudShell's 1 GB persistent home
+storage; use a dedicated `/tmp` working directory and `TF_DATA_DIR` for planning.
+Temporary storage is not an acceptable sole location for applied infrastructure
+state. Before any apply, establish protected persistent state and recovery.
+The provider lock must include Linux and Windows package hashes; generate them
+with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64`.
+
+After initializing in temporary storage with the Linux checksum recorded, the
+account-backed plan succeeded: **28 to add, 0 to change, 0 to destroy**, using
+Kubernetes 1.35. No apply ran. The private screenshot is retained locally under
+`artifacts/aws-preflight/terraform-plan-20261015.jpg`. Regenerate the plan with a
+fresh teardown deadline after the remaining access, cost and state-storage gates
+pass; the current review plan is not authorization to deploy.
+
 ## Execution and evidence
 
 1. Initialize from the committed lock file with short-lived AWS authentication.
