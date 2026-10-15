@@ -1,5 +1,11 @@
 # Project status, models and technology stack
 
+October 15 AWS update: the private EKS control plane was created, but worker launch
+failed on account Free Tier eligibility. All 25 managed demo resources were then
+destroyed and cleanup checks passed. AWS application deployment remains incomplete.
+See [execution and cleanup evidence](AWS_EXECUTION_20261015.md) and
+[verified portfolio metrics](PORTFOLIO_METRICS.md).
+
 Updated October 15, 2026. Portfolio project: production-style engineering with
 historical IEEE-CIS replay, not a live banking integration or approved production model.
 

@@ -9,7 +9,7 @@ services remain separate work.
 - A dedicated VPC, two private subnets and one public subnet for outbound NAT.
 - One NAT gateway and one charged public IPv4 address; nodes have no public IPs.
 - Private EKS API, standard-support Kubernetes version selected at deployment.
-- Two m6i.large nodes (four vCPUs total), each with a 30 GB encrypted gp3 disk.
+- Two nodes of an explicitly reviewed x86_64 instance type, each with a 30 GB encrypted gp3 disk.
 - EKS cluster/node IAM roles, an explicitly supplied operator role access entry.
 - Immutable-tag ECR repository and one-day control-plane log retention.
 - Operator security group for a CloudShell VPC environment, with cluster API
@@ -131,3 +131,23 @@ that an apply has run or that the remaining preflight gates passed.
 
 Preserve original S3 datasets, baseline models and unrelated resources. A new
 demonstration does not authorize deleting resources outside its reviewed inventory.
+
+## October 15 execution correction
+
+The first AWS apply reached an ACTIVE private EKS control plane, but worker creation
+failed because m6i.large was ineligible under the account Free Tier plan. See
+[the execution report](../../docs/AWS_EXECUTION_20261015.md). Earlier no-apply
+statements above describe the preflight history and are superseded by that report.
+
+Worker type is now a required `worker_instance_type` variable, with no automatic
+fallback. Before another plan, run:
+
+```powershell
+uv run python scripts/check_aws_worker_eligibility.py --instance-type <reviewed-type>
+```
+
+This read-only gate checks EC2 eligibility metadata and x86_64 compatibility.
+It does not prove account launch permission, quotas, AZ capacity, workload memory,
+or zero cost. Check those separately, plus private operator connectivity, model
+transfer and image availability, before incurring control-plane/NAT costs. An
+ExpiresAt tag is not an automatic shutdown mechanism.

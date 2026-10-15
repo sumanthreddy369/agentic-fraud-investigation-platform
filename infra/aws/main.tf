@@ -41,6 +41,14 @@ variable "name" {
   type    = string
   default = "risk-portfolio-demo"
 }
+variable "worker_instance_type" {
+  type        = string
+  description = "Explicit x86_64 worker type checked for account eligibility, quota and cost before apply."
+  validation {
+    condition     = can(regex("^[a-z0-9-]+[.][a-z0-9]+$", var.worker_instance_type))
+    error_message = "Provide a reviewed EC2 instance type."
+  }
+}
 provider "aws" {
   region              = "us-east-1"
   allowed_account_ids = [var.account_id]
@@ -212,7 +220,7 @@ resource "aws_eks_node_group" "demo" {
   node_group_name = "demo"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = aws_subnet.private[*].id
-  instance_types  = ["m6i.large"]
+  instance_types  = [var.worker_instance_type]
   capacity_type   = "ON_DEMAND"
   ami_type        = "AL2023_x86_64_STANDARD"
   launch_template {
