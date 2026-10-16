@@ -1,8 +1,10 @@
-# Temporary AWS EKS assessment — not deployed
+# Temporary AWS EKS assessment — first attempt cleaned up
 
-Prepared October 14, 2026. This directory is infrastructure code, not deployment
-evidence. No Terraform apply has run. Application deployment and lifecycle/agent
-services remain separate work.
+Current status: the October 15 apply created a private control plane, but worker
+creation failed. All 25 tracked resources were subsequently destroyed and cleanup
+was verified. See [the execution report](../../docs/AWS_EXECUTION_20261015.md).
+The application has not been deployed on AWS. Dated preflight notes below are
+historical; lifecycle and agent services remain separate work.
 
 ## Proposed resources
 
@@ -114,7 +116,7 @@ association, after successful operator verification. This approval does not impl
 that an apply has run or that the remaining preflight gates passed.
 
 1. Initialize from the committed lock file with short-lived AWS authentication.
-2. Supply account_id, operator_role_arn, kubernetes_version and expires_at in an
+2. Supply account_id, operator_role_arn, kubernetes_version, worker_instance_type and expires_at in an
    ignored variables file. State and saved plans stay private and protected.
 3. Run `terraform plan -out=<private-plan-path>` and review all changes.
 4. Apply only after the access and cost gates above pass. Establish CloudShell VPC
@@ -146,8 +148,11 @@ fallback. Before another plan, run:
 uv run python scripts/check_aws_worker_eligibility.py --instance-type <reviewed-type>
 ```
 
-This read-only gate checks EC2 eligibility metadata and x86_64 compatibility.
-It does not prove account launch permission, quotas, AZ capacity, workload memory,
+This read-only gate checks EC2 eligibility metadata, x86_64 compatibility, and a
+default capacity floor of 2 vCPUs and 8192 MiB per worker. Explicit positive
+`--min-vcpus` and `--min-memory-mib` overrides support a reviewed sizing change.
+The floor is a conservative demo screening rule, not a measured scheduling guarantee.
+It does not prove account launch permission, quotas, AZ capacity, workload fit,
 or zero cost. Check those separately, plus private operator connectivity, model
 transfer and image availability, before incurring control-plane/NAT costs. An
 ExpiresAt tag is not an automatic shutdown mechanism.
