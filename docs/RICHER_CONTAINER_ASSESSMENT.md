@@ -40,7 +40,7 @@ Measure the same workload through multiple replicas, preserve one-call-per-domai
 bounds, and define explicit queue/backpressure behavior for historical replay.
 Verify end-to-end preprocessing and database readiness with the richer model before
 cloud rollout. Publish errors alongside throughput; do not bypass guardrails merely
-to improve the success count. AWS deployment, monitoring and agents remain pending.
+to improve the success count. AWS deployment, monitoring and agents remain incomplete.
 
 ## Reproduce
 

@@ -7,7 +7,7 @@ On October 11, 2026, the official IEEE-CIS competition ZIP was downloaded after 
 user completed Kaggle access. All five CSVs are stored locally in ignored
 `data/raw/ieee_cis/`. Training-table profiling, checksums, and chronological split
 outputs are in ignored `artifacts/ieee_cis/run-001/`. The original ZIP upload to the private S3 learning bucket was verified on October 11;
-object-version pinning and Glue tables remain pending. Home Credit and Elliptic source files remain unavailable.
+object-version pinning and Glue tables remain incomplete. Home Credit and Elliptic source files remain unavailable.
 
 The repository includes a local IEEE-CIS training-table profiling and temporal-split
 program; see [the local workflow](LOCAL_DATA_WORKFLOW.md). The first real training-table
@@ -17,7 +17,7 @@ versions, validated preprocessing, and model approval.
 
 | Domain key | Dataset | Prediction unit | Target/label | Current status |
 | --- | --- | --- | --- | --- |
-| `ieee_cis` | IEEE-CIS Fraud Detection | Online transaction | Binary `isFraud` probability | Official files downloaded; initial local profiling complete; feature preprocessing and model contract pending |
+| `ieee_cis` | IEEE-CIS Fraud Detection | Online transaction | Binary `isFraud` probability | Official files downloaded; EDA and local ONNX serving completed; see [model qualification](RICHER_MODEL_SERVING.md) |
 | `home_credit` | Home Credit Default Risk | Loan application, with related historical tables | Binary repayment/default target | Authoritative files, training implementation, and saved model missing |
 | `elliptic` | Elliptic Bitcoin transaction graph | Transaction node in a directed temporal graph | Licit, illicit, or unknown node label | Graph builder, dataset files, feature mapping, and saved classifier missing |
 

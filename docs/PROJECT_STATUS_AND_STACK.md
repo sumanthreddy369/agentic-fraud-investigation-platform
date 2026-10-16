@@ -30,7 +30,7 @@ Calibration did not improve random-forest audit Brier score. The local Kubernete
 included as a same-split competitor. A [400-feature research candidate](RICHER_MODEL_CANDIDATE.md) has now been trained;
 its audit AP is 0.4401. The 400-feature model is now exported as
 `ieee-hgb400-raw-v3` and qualified through local ONNX/API/container and database
-replay checks. AWS deployment remains pending; see the linked qualification reports below.
+replay checks. AWS deployment is not complete; see the linked qualification reports below.
 
 [Full comparisons, calibration bins and subgroup tables](FULL_EDA_COMPARISON.md)
 include the omitted logistic calibrated variant and evaluation caveats.
@@ -107,11 +107,11 @@ Raw data, model binaries, golden feature payloads, credentials and Terraform sta
 remain excluded. This update publishes model documentation, not model binaries to
 GitHub or S3. A private, versioned artifact upload is part of the AWS deployment work.
 
-Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). This supersedes earlier pending labels for those analyses; serving qualification remains pending.
+Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). Local serving qualification is documented in the report below.
 
-Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERVING.md) now pass. This supersedes the earlier export-pending status. Cloud deployment and production approval remain pending.
+Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERVING.md) now pass. This supersedes the earlier export status. Cloud deployment and production approval remain incomplete.
 
-[Container concurrency assessment](RICHER_CONTAINER_ASSESSMENT.md): v3 golden predictions pass, but a four-client burst produced 22 capacity-related 503 responses out of 40 requests. Multi-replica load acceptance remains pending.
+[Container concurrency assessment](RICHER_CONTAINER_ASSESSMENT.md): v3 golden predictions pass, but a four-client burst produced 22 capacity-related 503 responses out of 40 requests. The subsequent multi-replica assessment is linked below.
 
 [Three-replica bounded replay](REPLICA_REPLAY_RESULTS.md) subsequently passed 60/60 requests with zero retries and exact parity. This is local Docker replay, not AWS or Kubernetes load-balancer validation.
 
@@ -119,4 +119,4 @@ Update: [richer-model ONNX export and local API qualification](RICHER_MODEL_SERV
 
 [Database-backed replay](DATABASE_REPLAY_RESULTS.md) now passes ten golden predictions,
 duplicate delivery after an API restart and changed-payload rejection on local
-PostgreSQL 17. AWS deployment remains pending.
+PostgreSQL 17. AWS deployment is not complete.

@@ -6,7 +6,7 @@
 
 [Current delivery workflow and completion gates](docs/DELIVERY_WORKFLOW.md) covers the stronger model, temporary AWS assessment, and investigation agents.
 
-[EDA and results report](docs/EDA_AND_RESULTS.md) includes analysis coverage, model
+[EDA and model comparison](docs/FULL_EDA_COMPARISON.md) includes analysis coverage, model
 selection rationale, comparison tables, per-column blank counts, and measured tests.
 
 This repository provides a guarded FastAPI service around the existing IEEE-CIS, Home Credit, and Elliptic risk model boundaries. It stores investigation cases and model-score provenance in PostgreSQL, supports validated ONNX inference, and defines a policy layer for future agent-driven investigations.
@@ -85,8 +85,7 @@ verification, blockers, and the path to the final investigation-agent workflows.
 ├── uv.lock                               # Locked Python dependency graph
 ├── AGENTIC_FRAUD_PLATFORM_PLAN.md        # Incremental target plan
 ├── README.md                             # Code map, flows, commands, and status
-├── AGENTS.md                             # Instructions for coding agents
-└── CLAUDE.md                             # Pointer to AGENTS.md
+└── AGENTS.md                             # Repository contribution conventions
 ```
 
 ---
@@ -269,8 +268,8 @@ flowchart TD
     Resolve -->|missing or cross-case| Reject["422 generic evidence error"]
     Resolve -->|valid| Snapshot["Snapshot reference IDs, versions, hashes, and provenance"]
     Snapshot --> Commit["Commit record and investigation.submitted audit atomically"]
-    Commit --> Pending["201 awaiting_review; requires_human_review=true"]
-    Pending --> Read["Authorized GET by ID or paginated case list"]
+    Commit --> ReviewQueue["201 awaiting_review; requires_human_review=true"]
+    ReviewQueue --> Read["Authorized GET by ID or paginated case list"]
 ```
 
 `InvestigationCreate` accepts a disposition, a nonblank summary of at most 4,000 characters,

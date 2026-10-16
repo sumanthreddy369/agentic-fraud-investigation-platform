@@ -32,7 +32,7 @@ demonstration resources. See [current status and stack](PROJECT_STATUS_AND_STACK
 
 | Area | Verified status |
 | --- | --- |
-| Data | IEEE-CIS downloaded; original ZIP uploaded to private S3; object-version pinning pending |
+| Data | IEEE-CIS downloaded; original ZIP uploaded to private S3; object-version pinning not yet recorded |
 | Analysis | Descriptive EDA, same-split comparisons, calibration and winner subgroups completed; wider correlations sampled |
 | Model | Richer 400-feature histogram boosting v3 exported to ONNX and qualified locally; original baselines preserved |
 | API | Guarded scoring, cases, score provenance, evidence references and immutable investigation submissions implemented |

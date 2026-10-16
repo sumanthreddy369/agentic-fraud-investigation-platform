@@ -34,7 +34,7 @@ The prior unqueued four-client test produced 22 HTTP 503 responses out of 40 req
 This exercise changes both replica count and admission behavior; improvement cannot
 be attributed to replicas alone. Queue persistence, redelivery/idempotency and crash
 recovery remain necessary for an operational event pipeline. The process-local queue
-would lose pending work if the replay process stopped.
+would lose queued work if the replay process stopped.
 
 ## Reproduce
 

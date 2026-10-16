@@ -29,7 +29,7 @@ Competition test tables remain untouched. No calendar date is inferred from Tran
 Tests use explicitly synthetic records. Real EDA has not run until official files are
 available. Synthetic test success does not establish dataset quality or model performance.
 
-## AWS upload — pending destination and source access
+## Private S3 upload procedure
 
 Upload the approved raw files, checksums, and outputs only to the project's private S3
 location after verifying the account, region, access controls, retention, and budget.

@@ -26,7 +26,7 @@ improvement in audit Brier score. See [analysis](FULL_EDA_COMPARISON.md).
 Proved local Kubernetes deployment, API pod replacement, manual 1-to-3 scaling,
 Terraform no-drift and destroy/rebuild, with 60 matching golden predictions.
 Removed the disposable cluster afterward. See [proof and reproduction](DEPLOYMENT_PROOF.md).
-These supersede the earlier pending infrastructure status below. Agents, external
+These supersede the earlier infrastructure status below. Agents, external
 retrieval/MCP, MLflow/Airflow, monitoring dashboards and AWS serving remain targets.
 
 ## October 13 2026 model and API milestone
@@ -37,7 +37,7 @@ Focused tests passed: 36 passed, 1 skipped. See [baseline results](BASELINE_MODE
 for reproduction, metrics, limitations, and private artifact locations. Docker engine
 started successfully after the initial check. The image built and passed ten golden
 predictions over HTTP; the temporary container was stopped. Kubernetes has no configured
-local context, and deployment/recovery/scaling proofs remain pending.
+local context, and deployment/recovery/scaling proofs remain incomplete.
 
 ## October 11, 2026 — dataset onboarding preparation
 
@@ -46,7 +46,7 @@ local context, and deployment/recovery/scaling proofs remain pending.
 - Saved `scripts/profile_ieee_cis.py`: file checksums, training CSV quality checks,
   missing-cell summaries, identity coverage, fraud rates, and chronological splits.
 - Eight synthetic tests passed; repository Ruff and formatting checks passed.
-- Actual source data has not been downloaded or analyzed. S3 upload is pending.
+- Actual source data has not been downloaded or analyzed. S3 upload is not complete.
 - Browser verification shows Kaggle signed out. The AWS tab is also at sign-in.
 - GitHub CLI reports expired/invalid authentication; this update is saved locally,
   not yet published. No new cloud resources were started for this step.
@@ -69,7 +69,7 @@ The private access screenshot is saved under `artifacts/milestones/`.
 
 This supersedes the earlier Kaggle access blocker. It is an initial quality and split
 analysis, not completed feature preprocessing or model evaluation. AWS still requires
-sign-in; S3 upload is not complete. GitHub publication also remains pending authentication.
+sign-in; S3 upload is not complete. GitHub publication was also blocked by authentication.
 
 1. Access official IEEE-CIS source under accepted terms; record checksums and private
    S3 object versions. Save an upload summary without account identifiers or raw rows.

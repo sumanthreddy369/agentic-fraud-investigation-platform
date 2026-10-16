@@ -2,9 +2,9 @@
 
 Historical initial-baseline report, superseded for EDA and model comparison by
 [FULL_EDA_COMPARISON.md](FULL_EDA_COMPARISON.md) and for infrastructure by
-[DEPLOYMENT_PROOF.md](DEPLOYMENT_PROOF.md). The pending labels below describe the earlier stage.
+[DEPLOYMENT_PROOF.md](DEPLOYMENT_PROOF.md). The tables below record the initial baseline stage.
 
-At that earlier stage, initial training-table profiling was complete; comprehensive EDA and multi-model selection are not complete. All reported model metrics use the chronological validation partition, not an independent final test set.
+At that earlier stage, initial training-table profiling was complete; comprehensive EDA and multi-model selection were not complete. All reported model metrics use the chronological validation partition, not an independent final test set.
 
 ## EDA coverage
 
@@ -16,9 +16,9 @@ At that earlier stage, initial training-table profiling was complete; comprehens
 | Identity matching | Complete | 144233 identity rows; 446307 unmatched transactions retained |
 | Temporal split and class balance | Complete | Time ties stay together; no random-only split |
 | Test tables | Not profiled | Downloaded but untouched |
-| Feature distributions and correlations | Pending | No full univariate or relationship analysis |
-| Subgroup errors and fairness | Pending | No subgroup conclusions supported |
-| Calibration and drift | Pending | Brier score measured; no fitted calibration or drift evaluation |
+| Feature distributions and correlations | Not completed at that stage | No full univariate or relationship analysis |
+| Subgroup errors and fairness | Not completed at that stage | No subgroup conclusions supported |
+| Calibration and drift | Not completed at that stage | Brier score measured; no fitted calibration or drift evaluation |
 
 ## Dataset and split comparison
 
@@ -85,8 +85,8 @@ without changing its original scope.
 | Container build and HTTP inference | Build succeeded; 10 predictions passed | Loopback only; temporary container stopped |
 | Ruff and formatting | Passed at model milestone | No full security audit rerun claimed |
 | Database readiness in container | Not tested | No database deployment proof |
-| Kubernetes recovery and scaling | Pending | No cluster proof |
-| Terraform reproducibility | Pending | Draft unvalidated |
+| Kubernetes recovery and scaling | Not completed at that stage | No cluster proof |
+| Terraform reproducibility | Not completed at that stage | Draft unvalidated |
 
 ## Per column blank counts
 

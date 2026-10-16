@@ -31,7 +31,7 @@ The audit period was previously examined. These are retrospective results, not
 independent evidence of production performance. Identity availability at scoring time
 and anonymized feature semantics are unverified. Calibration, operating thresholds,
 subgroup analysis for this candidate, temporal stability, uncertainty estimates and
-ONNX conversion/parity remain pending. No model binary from this experiment was saved
+ONNX conversion/parity were outside this experiment. No model binary from this experiment was saved
 or promoted; the prior verified ONNX baseline remains unchanged.
 
 ## Reproduce
@@ -47,4 +47,4 @@ are saved in artifacts/ieee_cis/richer-numeric-v1; raw rows are not published.
 
 [Training code](../scripts/train_richer_numeric.py) | [Evidence gallery](MILESTONE_GALLERY.md)
 
-Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). This supersedes earlier pending labels for those analyses; serving qualification remains pending.
+Calibration, validation-defined review scenarios and business-subgroup evaluation are now recorded in [the qualification report](RICHER_MODEL_QUALIFICATION.md). Local serving qualification followed in [the ONNX and API report](RICHER_MODEL_SERVING.md).

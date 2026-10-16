@@ -1,6 +1,6 @@
 # Milestone evidence gallery
 
-Updated October 13, 2026. Screenshots show what was visible when captured;
+Updated October 16, 2026. Screenshots show what was visible when captured;
 automated results and execution logs establish whether a test passed.
 
 ## Published analysis
@@ -25,12 +25,12 @@ See [the full report](FULL_EDA_COMPARISON.md) for split definitions and limitati
 | --- | --- | --- |
 | Richer model | Training completion, comparison table and qualification results | Completed locally; [measured results](RICHER_MODEL_CANDIDATE.md) |
 | Local infrastructure | Readiness, pod replacement, replica scoring and Terraform rebuild | Execution proof saved; no historical running-stack screenshot claimed |
-| AWS infrastructure | Tagged resources, deployment health, Terraform plan/apply results | Pending deployment |
-| AWS model API | Authenticated smoke-test summary without tokens or raw feature payloads | Pending deployment |
+| AWS infrastructure | Tagged resources, deployment health, Terraform plan/apply results | Private control plane created; worker launch failed; environment removed |
+| AWS model API | Authenticated smoke-test summary without tokens or raw feature payloads | Not deployed |
 | MLflow/Airflow | Versioned model run and successful scheduled pipeline/recovery | Target (not built yet) |
 | Prometheus/Grafana | Measured latency/error dashboard and triggered alert | Target (not built yet) |
 | Agents | Evidence-linked case report, abstention, human review and checkpoint recovery | Target (not built yet) |
-| AWS teardown | Deleted demonstration resources and residual-resource inventory | Pending deployment and teardown |
+| AWS teardown | Deleted demonstration resources and residual-resource inventory | [25 resources removed; cleanup checks passed](AWS_EXECUTION_20261015.md) |
 
 Save original screenshots locally under ignored artifacts/milestones. Publish only
 reviewed images with account identifiers, credentials, raw rows and sensitive evidence
