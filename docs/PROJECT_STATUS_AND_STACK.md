@@ -1,5 +1,13 @@
 # Project status, models and technology stack
 
+October 17 implementation: [API monitoring](OBSERVABILITY.md) now includes authenticated
+Prometheus metrics, alert rules and a provisioned Grafana dashboard. The local container
+assessment passed scraping, alert firing, latency samples and dashboard checks, then
+removed its containers. The [local LangGraph workflow](INVESTIGATION_WORKFLOW.md) has
+checkpoint recovery and policy tests. These additions supersede the older target-only
+descriptions for those specific components; AWS integration and live agent providers
+remain separate work.
+
 October 15 AWS update: the private EKS control plane was created, but worker launch
 failed on account Free Tier eligibility. All 25 managed demo resources were then
 destroyed and cleanup checks passed. AWS application deployment remains incomplete.

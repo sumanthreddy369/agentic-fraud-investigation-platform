@@ -12,6 +12,8 @@ class Settings(BaseSettings):
         "postgresql+psycopg://risk_local:risk_local@localhost:55432/risk_platform"
     )
     api_token: SecretStr = SecretStr("")
+    metrics_enabled: bool = False
+    metrics_token: SecretStr = SecretStr("")
     operator_id: str = Field(default="local-investigator", min_length=1, max_length=200)
     operator_role: Literal["investigator", "reviewer", "auditor"] = "investigator"
     allowed_domains: set[str] = {"ieee_cis", "home_credit", "elliptic"}
@@ -32,7 +34,7 @@ class Settings(BaseSettings):
     # Fail closed: shared environments need an OIDC implementation in a later increment.
     environment: Literal["local", "test"] = "local"
 
-    @field_validator("api_token")
+    @field_validator("api_token", "metrics_token")
     @classmethod
     def token_length(cls, value: SecretStr) -> SecretStr:
         if value.get_secret_value() and len(value.get_secret_value()) < 32:

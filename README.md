@@ -1,5 +1,10 @@
 # Agentic Fraud Investigation Platform
 
+October 17: [authenticated API metrics, Prometheus alerts and Grafana](docs/OBSERVABILITY.md)
+now have a reproducible local demonstration. A [bounded LangGraph workflow](docs/INVESTIGATION_WORKFLOW.md)
+has local checkpoint and policy tests. Live Bedrock drafting, MCP transport and AWS
+application deployment are not integrated yet.
+
 [Latest status, model comparison, code and tech stack](docs/PROJECT_STATUS_AND_STACK.md)
 
 [Milestone screenshots and result figures](docs/MILESTONE_GALLERY.md)

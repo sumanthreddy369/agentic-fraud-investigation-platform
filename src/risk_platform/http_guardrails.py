@@ -10,14 +10,16 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from risk_platform.config import Settings
+from risk_platform.metrics import HttpMetrics
 
 logger = logging.getLogger("risk_platform.security")
 
 
 class GuardrailMiddleware:
-    def __init__(self, app: ASGIApp, settings: Settings):
+    def __init__(self, app: ASGIApp, settings: Settings, metrics: HttpMetrics | None = None):
         self.app = app
         self.settings = settings
+        self.metrics = metrics
         self.active = 0
         self.window = -1
         self.clients: dict[str, int] = {}
@@ -148,6 +150,13 @@ class GuardrailMiddleware:
             if admitted:
                 self.active -= 1
             route = scope.get("route")
+            if self.metrics is not None:
+                self.metrics.observe(
+                    getattr(route, "path", "unmatched"),
+                    scope["method"],
+                    status,
+                    time.monotonic() - start,
+                )
             logger.info(
                 json.dumps(
                     {

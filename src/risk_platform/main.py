@@ -33,6 +33,7 @@ from risk_platform.contracts import (
 from risk_platform.control_catalog import control_catalog
 from risk_platform.database import make_engine, make_sessions
 from risk_platform.http_guardrails import GuardrailMiddleware
+from risk_platform.metrics import HttpMetrics
 from risk_platform.onnx_adapter import load_onnx_adapters
 from risk_platform.scoring import ScoringFailure, ScoringGateway
 from risk_platform.service import (
@@ -107,8 +108,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.models = ModelRegistry(load_onnx_adapters(configuration.onnx_manifests))
 
     app.state.scoring = ScoringGateway(app.state.models, configuration)
+    app.state.metrics = HttpMetrics()
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=configuration.allowed_hosts)
-    app.add_middleware(GuardrailMiddleware, settings=configuration)
+    app.add_middleware(GuardrailMiddleware, settings=configuration, metrics=app.state.metrics)
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics(
+        credential: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+    ):
+        if not configuration.metrics_enabled:
+            raise HTTPException(404, "Not found")
+        token = configuration.metrics_token.get_secret_value()
+        if not token:
+            raise HTTPException(503, "Metrics access is not configured")
+        if credential is None or not secrets.compare_digest(
+            credential.credentials.encode(), token.encode()
+        ):
+            raise HTTPException(401, "Invalid credentials")
+        return Response(
+            content=app.state.metrics.render(),
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, error: RequestValidationError):
