@@ -2,7 +2,38 @@
 
 This is the governing target architecture for the Agentic Fraud Detection and Investigation Platform. Delivery remains incremental: preserve verified IEEE-CIS, Home Credit, and Elliptic components, place versioned adapters around them, and add production services only after their contracts and acceptance evidence are available. Dataset-specific sources, schemas, controls, and AWS landing rules are defined in [DATASETS.md](DATASETS.md).
 
-## Current status
+## Updated portfolio plan — October 11, 2026
+
+**Target (not built yet):** demonstrate ML Platform Engineering and AI Infrastructure
+Engineering together through the fraud investigation application. This is a learning
+design, not a claim that the repositories already contain or run these services.
+
+| Layer | Planned responsibility | Evidence required for completion |
+| --- | --- | --- |
+| Fraud / risk models and model versions | Preserve separate IEEE-CIS, Home Credit, and Elliptic contracts; track data, preprocessing, evaluations, and approved artifacts | Reproducible evaluation and a verified versioned model served through the existing adapter |
+| Kubernetes | Workload scheduling, scaling, and recovery for containerized services and jobs | Local deployment manifests, health probes, resource limits, and demonstrated recovery and scaling |
+| MLflow + Airflow | Model lifecycle tracking and scheduled data/training/evaluation pipelines | Versioned runs and artifacts, idempotent DAGs, failure recovery, and explicit promotion approval |
+| Terraform + CI/CD | Provision infrastructure, test changes, and release approved versions | Reviewed infrastructure plans, automated checks, controlled deployment, rollback, and teardown |
+| Prometheus + Grafana | Metrics, alerts, and operational dashboards | Bounded metrics without sensitive payloads, working dashboards, and tested alerts |
+
+Existing CI tests are implemented; Terraform provisioning and automated deployment are
+targets. Existing ONNX adapter support does not establish that real model artifacts are
+available. LangGraph, MCP, retrieval, and authoritative human review remain application
+targets alongside these platform layers.
+
+Build and validate locally first. Complete source access, data profiling, preprocessing,
+and one evaluated model before adding cluster infrastructure. Add reproducible MLflow
+runs and Airflow jobs, then local Kubernetes, monitoring, and controlled infrastructure
+releases. Cloud deployment is a final bounded exercise with budget checks and teardown;
+do not keep learning clusters or schedulers running between exercises.
+
+This updates the platform tooling direction below: Kubernetes, Airflow, MLflow,
+Terraform, Prometheus, and Grafana form the intended portable learning stack. The
+AWS-managed services in the earlier design are deployment alternatives to evaluate,
+not a requirement to deploy duplicate orchestration, registry, and monitoring stacks.
+No cloud resources are authorized for creation merely by this architecture description.
+
+## Implementation inventory
 
 | Capability | Status | Repository evidence | AWS target |
 | --- | --- | --- | --- |

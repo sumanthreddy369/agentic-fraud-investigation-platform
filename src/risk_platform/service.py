@@ -10,11 +10,19 @@ from risk_platform.contracts import (
     CaseCreate,
     Domain,
     EvidenceCreate,
+    EvidenceView,
+    InvestigationCreate,
     ModelAvailability,
     ScoreRequest,
     ScoreResult,
 )
-from risk_platform.database import AuditEvent, Case, EvidenceReference, ModelScoreReference
+from risk_platform.database import (
+    AuditEvent,
+    Case,
+    EvidenceReference,
+    InvestigationRecord,
+    ModelScoreReference,
+)
 
 
 class DomainDenied(Exception):
@@ -26,6 +34,10 @@ class IdempotencyConflict(Exception):
 
 
 class CaseNotFound(Exception):
+    pass
+
+
+class EvidenceUnavailable(Exception):
     pass
 
 
@@ -216,6 +228,99 @@ class CaseService:
                 Case.id == case_id, Case.owner_id == self.actor_id, Case.domain.in_(self.domains)
             )
             .order_by(EvidenceReference.created_at, EvidenceReference.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result)
+
+    async def submit_investigation(
+        self, case_id: UUID, request: InvestigationCreate, key: str
+    ) -> tuple[InvestigationRecord, bool]:
+        if await self.get(case_id) is None:
+            raise CaseNotFound()
+        fingerprint = hashlib.sha256(
+            json.dumps(
+                request.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest()
+        lookup = select(InvestigationRecord).where(
+            InvestigationRecord.case_id == case_id, InvestigationRecord.idempotency_key == key
+        )
+
+        def replay(record: InvestigationRecord) -> tuple[InvestigationRecord, bool]:
+            if record.request_hash != fingerprint:
+                raise IdempotencyConflict()
+            return record, False
+
+        existing = await self.session.scalar(lookup)
+        if existing is not None:
+            return replay(existing)
+        references = await self.session.scalars(
+            select(EvidenceReference)
+            .join(Case, EvidenceReference.case_id == Case.id)
+            .where(
+                Case.id == case_id,
+                Case.owner_id == self.actor_id,
+                Case.domain.in_(self.domains),
+                EvidenceReference.id.in_(request.evidence_ids),
+            )
+        )
+        by_id = {reference.id: reference for reference in references}
+        if len(by_id) != len(request.evidence_ids):
+            # Do not reveal whether a missing reference exists in another case.
+            raise EvidenceUnavailable()
+        record = InvestigationRecord(
+            case_id=case_id,
+            actor_id=self.actor_id,
+            idempotency_key=key,
+            request_hash=fingerprint,
+            disposition=request.disposition,
+            summary=request.summary,
+            evidence=[
+                EvidenceView.model_validate(by_id[item], from_attributes=True).model_dump(
+                    mode="json"
+                )
+                for item in request.evidence_ids
+            ],
+        )
+        self.session.add(record)
+        try:
+            await self.session.flush()
+            self.session.add(
+                AuditEvent(case_id=case_id, actor_id=self.actor_id, event="investigation.submitted")
+            )
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self.session.scalar(lookup)
+            if existing is None:
+                raise
+            return replay(existing)
+        return record, True
+
+    async def get_investigation(self, investigation_id: UUID) -> InvestigationRecord | None:
+        return await self.session.scalar(
+            select(InvestigationRecord)
+            .join(Case, InvestigationRecord.case_id == Case.id)
+            .where(
+                InvestigationRecord.id == investigation_id,
+                Case.owner_id == self.actor_id,
+                Case.domain.in_(self.domains),
+            )
+        )
+
+    async def list_investigations(
+        self, case_id: UUID, limit: int = 10, offset: int = 0
+    ) -> list[InvestigationRecord]:
+        if await self.get(case_id) is None:
+            raise CaseNotFound()
+        result = await self.session.scalars(
+            select(InvestigationRecord)
+            .join(Case, InvestigationRecord.case_id == Case.id)
+            .where(
+                Case.id == case_id, Case.owner_id == self.actor_id, Case.domain.in_(self.domains)
+            )
+            .order_by(InvestigationRecord.created_at, InvestigationRecord.id)
             .limit(limit)
             .offset(offset)
         )

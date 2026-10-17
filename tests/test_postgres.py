@@ -10,12 +10,13 @@ from risk_platform.contracts import (
     CaseCreate,
     Domain,
     EvidenceCreate,
+    InvestigationCreate,
     ModelAvailability,
     ScoreRequest,
     ScoreResult,
 )
 from risk_platform.database import make_engine, make_sessions
-from risk_platform.service import CaseService
+from risk_platform.service import CaseService, IdempotencyConflict
 
 pytestmark = pytest.mark.postgres
 
@@ -103,6 +104,88 @@ async def test_migration_round_trip_and_concurrent_idempotency(postgres_url):
 
         async with engine.begin() as connection:
             await connection.run_sync(check)
+    finally:
+        await engine.dispose()
+
+
+async def test_investigation_upgrade_races_immutability_and_atomicity(postgres_url):
+    engine = make_engine(postgres_url)
+    try:
+
+        def previous_revision(connection):
+            config = Config("alembic.ini")
+            config.attributes["connection"] = connection
+            command.upgrade(config, "0003_evidence")
+
+        async with engine.begin() as connection:
+            await connection.run_sync(previous_revision)
+        sessions = make_sessions(engine)
+        async with sessions() as session:
+            service = CaseService(session, "owner")
+            case, _ = await service.create(
+                CaseCreate(domain="elliptic", source_record_id="synthetic", title="Upgrade"), "c"
+            )
+            evidence, _ = await service.add_evidence(
+                case.id,
+                EvidenceCreate(source_id="synthetic", source_version="v1", content_sha256="a" * 64),
+                "e",
+            )
+        async with engine.begin() as connection:
+            await connection.run_sync(run_migration, "up")
+        payload = InvestigationCreate(
+            disposition="escalate", summary="Synthetic recommendation", evidence_ids=[evidence.id]
+        )
+
+        async def submit(request, key):
+            async with sessions() as session:
+                return await CaseService(session, "owner").submit_investigation(
+                    case.id, request, key
+                )
+
+        results = await asyncio.gather(*(submit(payload, "same") for _ in range(6)))
+        record_id = results[0][0].id
+        assert {record.id for record, _ in results} == {record_id}
+        assert sum(created for _, created in results) == 1
+        competing = await asyncio.gather(
+            submit(payload, "conflict"),
+            submit(payload.model_copy(update={"summary": "Other recommendation"}), "conflict"),
+            return_exceptions=True,
+        )
+        assert sum(isinstance(result, IdempotencyConflict) for result in competing) == 1
+        await engine.dispose()
+        engine = make_engine(postgres_url)
+        sessions = make_sessions(engine)
+        async with sessions() as session:
+            record = await CaseService(session, "owner").get_investigation(record_id)
+            assert record.evidence[0]["source_version"] == "v1"
+            assert record.evidence[0]["content_sha256"] == "a" * 64
+            assert record.status == "awaiting_review"
+        for statement in (
+            "UPDATE investigation_records SET summary = 'tampered'",
+            "DELETE FROM investigation_records",
+            "TRUNCATE investigation_records",
+        ):
+            with pytest.raises(DBAPIError, match="append-only"):
+                async with engine.begin() as connection:
+                    await connection.execute(text(statement))
+        async with engine.begin() as connection:
+            await connection.execute(
+                text("""
+                CREATE FUNCTION fail_test_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'synthetic audit failure'; END; $$
+            """)
+            )
+            await connection.execute(
+                text("""
+                CREATE TRIGGER fail_test_audit BEFORE INSERT ON audit_events
+                FOR EACH ROW EXECUTE FUNCTION fail_test_audit()
+            """)
+            )
+        with pytest.raises(DBAPIError):
+            await submit(payload, "failed-audit")
+        async with engine.connect() as connection:
+            assert await connection.scalar(text("SELECT count(*) FROM investigation_records")) == 2
+            assert await connection.scalar(text("SELECT count(*) FROM audit_events")) == 4
     finally:
         await engine.dispose()
 

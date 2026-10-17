@@ -1,6 +1,9 @@
 # Agentic Fraud Detection and Investigation Platform
 
-Status: incremental implementation in progress. The local API, persistence, guardrails, portable inference boundary, and immutable case-scoped score provenance are implemented; no authoritative model or AWS deployment is claimed. The AWS-first target and current gap matrix are defined in [docs/AWS_TARGET_ARCHITECTURE.md](docs/AWS_TARGET_ARCHITECTURE.md).
+Current execution order and measured status: [delivery workflow](docs/DELIVERY_WORKFLOW.md).
+Local API, trained IEEE-CIS ONNX baselines and Kubernetes/Terraform lifecycle proof
+are verified. Stronger model qualification, AWS serving and live agents remain targets.
+The original architecture and baseline inventory below are retained as historical context.
 
 The target flow is also shown in the repository [README](README.md). Dataset sources, licensing gates, schemas, S3 layout, transformations, validation, leakage controls, and onboarding criteria are defined in [docs/DATASETS.md](docs/DATASETS.md).
 

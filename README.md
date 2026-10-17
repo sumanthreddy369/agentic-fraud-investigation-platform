@@ -1,10 +1,30 @@
 # Agentic Fraud Investigation Platform
 
+[Latest status, model comparison, code and tech stack](docs/PROJECT_STATUS_AND_STACK.md)
+
+[Milestone screenshots and result figures](docs/MILESTONE_GALLERY.md)
+
+[Current delivery workflow and completion gates](docs/DELIVERY_WORKFLOW.md) covers the stronger model, temporary AWS assessment, and investigation agents.
+
+[EDA and model comparison](docs/FULL_EDA_COMPARISON.md) includes analysis coverage, model
+selection rationale, comparison tables, per-column blank counts, and measured tests.
+
 This repository provides a guarded FastAPI service around the existing IEEE-CIS, Home Credit, and Elliptic risk model boundaries. It stores investigation cases and model-score provenance in PostgreSQL, supports validated ONNX inference, and defines a policy layer for future agent-driven investigations.
 
 **Status:** In development. The API, persistence, guardrails, and ONNX adapter are implemented. External agents, retrieval, graph services, AWS deployment, and human-review workflows remain targets.
 
+**Updated portfolio plan:** demonstrate ML Platform Engineering and AI Infrastructure
+Engineering through versioned fraud/risk models, Kubernetes scheduling/scaling/recovery,
+MLflow + Airflow model lifecycle and pipelines, Terraform + CI/CD provisioning and
+releases, and Prometheus + Grafana monitoring. Local Kubernetes/Terraform lifecycle proof, trained ONNX baselines and CI checks are
+verified. MLflow, Airflow, monitoring dashboards, AWS serving and live agents are
+**Target (not built yet)**. See the
+[updated architecture plan](docs/AWS_TARGET_ARCHITECTURE.md#updated-portfolio-plan--october-11-2026).
+
 [Public repository](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform) | [CI runs](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform/actions)
+
+[Build journal and milestone screenshots](docs/BUILD_JOURNAL.md) tracks current work,
+verification, blockers, and the path to the final investigation-agent workflows.
 
 ---
 
@@ -33,11 +53,13 @@ This repository provides a guarded FastAPI service around the existing IEEE-CIS,
 │   └── versions/
 │       ├── 0001_cases.py                 # Cases, audit events, and audit trigger
 │       ├── 0002_model_scores.py          # Score provenance and score trigger
-│       └── 0003_evidence.py              # Evidence references and immutability trigger
+│       ├── 0003_evidence.py              # Evidence references and immutability trigger
+│       └── 0004_investigations.py        # Immutable submissions with evidence snapshots
 ├── tests/                                # Fast SQLite and optional PostgreSQL tests
 │   ├── conftest.py                       # Fixtures and isolated PostgreSQL schemas
 │   ├── test_api.py                       # Routes, persistence, replay, and scoring
 │   ├── test_evidence.py                  # Evidence contracts, isolation, replay, and restart
+│   ├── test_investigations.py            # Submission scope, citation bounds, and replay
 │   ├── test_guardrails.py                # HTTP, authorization, and validation controls
 │   ├── test_agent_policy.py              # Tool, evidence, and report policy
 │   ├── test_onnx_adapter.py              # Generated ONNX model and provider tests
@@ -63,8 +85,7 @@ This repository provides a guarded FastAPI service around the existing IEEE-CIS,
 ├── uv.lock                               # Locked Python dependency graph
 ├── AGENTIC_FRAUD_PLATFORM_PLAN.md        # Incremental target plan
 ├── README.md                             # Code map, flows, commands, and status
-├── AGENTS.md                             # Instructions for coding agents
-└── CLAUDE.md                             # Pointer to AGENTS.md
+└── AGENTS.md                             # Repository contribution conventions
 ```
 
 ---
@@ -214,8 +235,8 @@ add evidence. The write kill switch blocks additions, including replay requests.
 
 **Status: Complete for reference storage.** Hashes are caller assertions, not verified source
 content. References do not grant source access, prove truth, authorize external AI, or fetch files
-or URLs. Raw excerpts are rejected. Source resolution, ingestion, revocation/retention, investigation
-packets, and reviewer decisions are **Target (not built yet)**. A correction creates a new reference;
+or URLs. Raw excerpts are rejected. Source resolution, ingestion, revocation/retention,
+and reviewer decisions are **Target (not built yet)**. A correction creates a new reference;
 this increment does not mark previous references superseded.
 
 Synthetic demonstration against a configured local API:
@@ -231,6 +252,53 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/v1/cases/$($case.id)/evidence?limi
 
 Repeat the evidence POST to replay it; change the hash under the same key to receive `409`.
 The example hash is synthetic and is not presented as verified evidence.
+
+---
+
+## Durable investigation submissions
+
+```mermaid
+flowchart TD
+    Submit["POST /v1/cases/{case_id}/investigations"] --> Access["Investigator permission, write switch, owner/domain scope"]
+    Access --> Contract["Bound summary and citations; require abstention without evidence"]
+    Contract --> Replay{"Idempotency key exists?"}
+    Replay -->|same request| Original["200 original immutable record"]
+    Replay -->|different request| Conflict["409 conflict"]
+    Replay -->|new| Resolve["Resolve every evidence ID within the case"]
+    Resolve -->|missing or cross-case| Reject["422 generic evidence error"]
+    Resolve -->|valid| Snapshot["Snapshot reference IDs, versions, hashes, and provenance"]
+    Snapshot --> Commit["Commit record and investigation.submitted audit atomically"]
+    Commit --> ReviewQueue["201 awaiting_review; requires_human_review=true"]
+    ReviewQueue --> Read["Authorized GET by ID or paginated case list"]
+```
+
+`InvestigationCreate` accepts a disposition, a nonblank summary of at most 4,000 characters,
+and at most 20 unique evidence UUIDs. `escalate` and `no_further_action` require citations;
+an empty list permits only `insufficient_evidence`. `CaseService.submit_investigation` builds the
+snapshot from stored references, never from caller-supplied provenance. Citation order is preserved
+and participates in the request hash. Adding a later evidence version does not change a submission.
+
+Read with `GET /v1/investigations/{id}` or `GET /v1/cases/{case_id}/investigations`
+(`limit` 1–25, default 10; `offset` 0–10000). PostgreSQL prevents record mutation or deletion.
+The submission ID identifies one immutable version; corrections require a new submission and key.
+Case lifecycle state remains unchanged. These are manually submitted recommendations, not executed
+agent runs. Citations establish reference binding, not source verification or factual entailment.
+Keep private source content out of summaries; summaries are persisted for authorized readers.
+
+**Status: Complete for immutable submission storage.** Human decision recording, reviewer access
+delegation/separation, review queue, supersession, workflow checkpoints, and agent execution remain
+**Target (not built yet)**. Every record remains `awaiting_review`; there is no approval endpoint
+or business-action executor. The standalone policy library is not connected to this API.
+
+After the synthetic evidence example above, submit and read a recommendation:
+
+```powershell
+$evidence = Invoke-RestMethod -Uri "http://127.0.0.1:8000/v1/cases/$($case.id)/evidence" -Headers $headers
+$headers['Idempotency-Key'] = 'demo-investigation-1'
+$proposal = @{ disposition = 'escalate'; summary = 'Synthetic recommendation for human review'; evidence_ids = @($evidence[0].id) } | ConvertTo-Json
+$submission = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/v1/cases/$($case.id)/investigations" -Headers $headers -ContentType application/json -Body $proposal
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/v1/investigations/$($submission.id)" -Headers $headers
+```
 
 ---
 
@@ -352,12 +420,13 @@ flowchart LR
         Env --> First["0001_cases"]
         First --> Second["0002_model_scores"]
         Second --> Third["0003_evidence"]
-        Third --> Schema["Cases, audits, score and evidence references"]
+        Third --> Fourth["0004_investigations"]
+        Fourth --> Schema["Cases, audits, score/evidence references, investigation submissions"]
         Schema --> Triggers["PostgreSQL immutability triggers"]
     end
     subgraph Runtime["Readiness check"]
         Probe["GET /health/ready"] --> Revision["Read alembic_version"]
-        Revision --> Current{"Revision is 0003_evidence?"}
+        Revision --> Current{"Revision is 0004_investigations?"}
         Current -->|no| NotReady["503 schema_mismatch"]
         Current -->|yes| Table["Probe CaseRecord table"]
         Table --> Available{"Query succeeds?"}
@@ -374,7 +443,7 @@ Alembic owns schema evolution. Runtime readiness requires the exact head revisio
 
 **Time:** `UTCDateTime` rejects naive values and normalizes aware values to UTC.
 
-**Status: Complete.** The head is `0003_evidence`. Managed database provisioning is not included.
+**Status: Complete.** The head is `0004_investigations`. Managed database provisioning is not included.
 
 ---
 
@@ -508,7 +577,7 @@ Settings use the `RISK_` prefix and may be loaded from `.env`.
 | `uv sync --frozen --python 3.11 --extra onnx-cpu` | Install the locked CPU development environment |
 | `uv sync --frozen --python 3.11 --extra onnx-openvino` | Install the locked Windows OpenVINO environment |
 | `docker compose up -d --wait` | Start PostgreSQL 17 on loopback |
-| `uv run alembic upgrade head` | Apply migrations through `0003_evidence` |
+| `uv run alembic upgrade head` | Apply migrations through `0004_investigations` |
 | `uv run risk-platform` | Start `risk_platform.runtime:serve` |
 | `uv run pytest -q` | Run fast tests and any configured PostgreSQL tests |
 | `uv run pytest -q tests/test_onnx_adapter.py` | Run generated-model adapter tests |
@@ -622,7 +691,8 @@ The feature map must match the manifest. Without a valid manifest, the domain re
 | LangGraph agents and supervisor | Target (not built yet) |
 | MCP tool servers | Target (not built yet) |
 | Bedrock or Azure OpenAI invocation | Target (not built yet) |
-| Human-review API and durable investigation packets | Target (not built yet) |
+| Immutable investigation submissions with evidence snapshots | Complete |
+| Human-review decisions, queue, and workflow transitions | Target (not built yet) |
 | Qdrant or pgvector, BM25, hybrid search, RRF, and BGE reranking | Target (not built yet) |
 | Neptune graph features and GraphRAG | Target (not built yet) |
 | Kafka or Kinesis and S3 ingestion | Target (not built yet) |
@@ -667,9 +737,18 @@ The runner creates a cluster under `.test-runtime`, selects a random loopback po
 |---|---|
 | `tests/test_api.py` | Routes, model state, persistence, replay, and score provenance |
 | `tests/test_evidence.py` | Evidence validation, roles, owner/domain isolation, replay, and restart |
+| `tests/test_investigations.py` | Evidence-bound submissions, abstention, scope, replay, and restart |
 | `tests/test_guardrails.py` | Auth, hosts, framing, limits, errors, and headers |
 | `tests/test_agent_policy.py` | Tools, budgets, evidence, citations, egress, and review |
 | `tests/test_onnx_adapter.py` | Hashes, manifests, features, outputs, CPU, and OpenVINO |
 | `tests/test_postgres.py` | Migrations, constraints, triggers, concurrency, and restart |
 
 The PostgreSQL fixture accepts only `postgresql+psycopg` URLs and drops only its randomized schema.
+
+## October 2026 measured results
+
+- [Expanded EDA, model comparison, calibration and subgroup tables](docs/FULL_EDA_COMPARISON.md)
+- [Local Kubernetes recovery/scaling and Terraform rebuild proof](docs/DEPLOYMENT_PROOF.md)
+
+The local proof cluster was removed after testing. Cloud serving and investigation
+agents remain targets; these results are an educational retrospective evaluation.
