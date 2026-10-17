@@ -24,7 +24,26 @@ Eligibility and offerings do not guarantee launch permission or available capaci
 The transfer does not establish a running prediction service. No EKS cluster, worker,
 or NAT gateway was created during these checks. S3 storage remains billable.
 
-## Next deployment steps
+## Network preparation
+
+A reviewed, targeted Terraform apply created four resources: a VPC, two private
+subnets in us-east-1a and us-east-1b, and an operator security group. Neither subnet
+assigns public IP addresses. This stage created no EKS cluster, workers or NAT
+gateway. State is stored in the private versioned S3 backend. A targeted apply is
+an intermediate recovery step, not evidence of full-stack convergence.
+
+The approved temporary CloudShell VPC policy was attached to the operator user as
+a customer-managed policy after the inline user-policy size limit rejected the
+first attachment attempt. IAM Access Analyzer returned no findings. Its grants
+expire at 2026-10-18 00:30 UTC, and cleanup must detach and delete the policy.
+Creation is restricted to the new demo subnets and operator security group,
+through CloudShell. This grants network connectivity, not EKS administration.
+Testing the private environment requires a non-root console session.
+
+Raw screenshots, resource identifiers and policy documents are retained locally
+under `artifacts/aws-preflight/` and excluded from Git.
+
+## Remaining deployment steps
 
 Resolve private operator connectivity, build and test the container image, review
 the revised Terraform plan and current costs, then run the timed AWS assessment.
