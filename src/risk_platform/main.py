@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from risk_platform.adapters import ModelRegistry, ModelUnavailable
+from risk_platform.agent_policy import PolicyDenied
 from risk_platform.authorization import require_permission
 from risk_platform.config import Settings
 from risk_platform.contracts import (
@@ -25,8 +26,12 @@ from risk_platform.contracts import (
     EvidenceCreate,
     EvidenceView,
     InvestigationCreate,
+    InvestigationRunCreate,
+    InvestigationRunView,
     InvestigationView,
     ModelAvailability,
+    ReviewCreate,
+    ReviewView,
     ScoreRequest,
     ScoreResult,
 )
@@ -166,7 +171,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def ready(database_session: Annotated[AsyncSession, Depends(session)]):
         # A socket check alone would report ready before migrations have been applied.
         revision = await database_session.scalar(text("SELECT version_num FROM alembic_version"))
-        if revision != "0004_investigations":
+        if revision != "0005_reviews_runs":
             raise HTTPException(503, "Database schema is not current")
         await database_session.execute(text("SELECT id FROM cases LIMIT 0"))
         return {
@@ -403,5 +408,69 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             InvestigationView.model_validate(record, from_attributes=True)
             for record in await cases.list_investigations(case_id, limit, offset)
         ]
+
+    @app.post(
+        "/v1/cases/{case_id}/investigation-runs",
+        response_model=InvestigationRunView,
+        status_code=201,
+        dependencies=[Depends(require_permission("investigations:create", actor))],
+    )
+    async def run_investigation(
+        case_id: UUID,
+        payload: InvestigationRunCreate,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        if not configuration.investigations_enabled:
+            raise HTTPException(503, "Investigation execution is disabled")
+        try:
+            record, created = await cases.run_investigation(case_id, payload, idempotency_key)
+        except IdempotencyConflict:
+            raise HTTPException(
+                409, "Investigation request conflicts with an existing run"
+            ) from None
+        except EvidenceUnavailable:
+            raise HTTPException(422, "Score references are unavailable for this case") from None
+        except (ImportError, PolicyDenied, TimeoutError):
+            raise HTTPException(503, "Investigation execution unavailable") from None
+        response.status_code = 201 if created else 200
+        return InvestigationRunView.model_validate(record, from_attributes=True)
+
+    @app.post(
+        "/v1/investigations/{investigation_id}/review",
+        response_model=ReviewView,
+        status_code=201,
+        dependencies=[Depends(require_permission("reviews:create", actor))],
+    )
+    async def review_investigation(
+        investigation_id: UUID,
+        payload: ReviewCreate,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        try:
+            record, created = await cases.review_investigation(
+                investigation_id, payload, idempotency_key
+            )
+        except IdempotencyConflict:
+            raise HTTPException(409, "Investigation already has a review") from None
+        response.status_code = 201 if created else 200
+        return ReviewView.model_validate(record, from_attributes=True)
+
+    @app.get(
+        "/v1/investigations/{investigation_id}/review",
+        response_model=ReviewView,
+        dependencies=[Depends(require_permission("cases:read", actor))],
+    )
+    async def get_review(
+        investigation_id: UUID,
+        cases: Annotated[CaseService, Depends(service)],
+    ):
+        record = await cases.get_review(investigation_id)
+        if record is None:
+            raise HTTPException(404, "Review not found")
+        return ReviewView.model_validate(record, from_attributes=True)
 
     return app

@@ -18,7 +18,9 @@ PERMISSIONS = {
             "controls:read",
         }
     ),
-    "reviewer": frozenset({"cases:read", "audit:read", "models:read", "controls:read"}),
+    "reviewer": frozenset(
+        {"cases:read", "audit:read", "models:read", "controls:read", "reviews:create"}
+    ),
     "auditor": frozenset({"cases:read", "audit:read", "models:read", "controls:read"}),
 }
 
@@ -33,7 +35,8 @@ def require_permission(permission: str, authentication):
         if permission == "models:score" and not settings.scoring_enabled:
             raise HTTPException(503, "Model scoring is disabled")
         if (
-            permission in {"scores:create", "evidence:create", "investigations:create"}
+            permission
+            in {"scores:create", "evidence:create", "investigations:create", "reviews:create"}
             and not settings.writes_enabled
         ):
             raise HTTPException(503, "Case writes are disabled")

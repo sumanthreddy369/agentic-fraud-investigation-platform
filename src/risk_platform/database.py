@@ -134,6 +134,39 @@ class InvestigationRecord(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
 
+class InvestigationRun(Base):
+    __tablename__ = "investigation_runs"
+    __table_args__ = (UniqueConstraint("case_id", "idempotency_key"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id"), index=True)
+    investigation_id: Mapped[UUID] = mapped_column(ForeignKey("investigation_records.id"))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    workflow_version: Mapped[str] = mapped_column(String(80))
+    scores: Mapped[list[dict]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+
+class InvestigationReview(Base):
+    __tablename__ = "investigation_reviews"
+    __table_args__ = (
+        UniqueConstraint("investigation_id"),
+        CheckConstraint(
+            "decision IN ('approve', 'reject', 'request_changes')", name="ck_review_decision"
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    investigation_id: Mapped[UUID] = mapped_column(ForeignKey("investigation_records.id"))
+    actor_id: Mapped[str] = mapped_column(String(200))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(30))
+    rationale: Mapped[str] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+
 def make_engine(url: str) -> AsyncEngine:
     if url.startswith("sqlite+"):
         # Used only by fast local tests; never a production PostgreSQL substitute.

@@ -1,5 +1,10 @@
 # Project status, models and technology stack
 
+October 18 implementation: [investigation execution and human review](INVESTIGATION_API.md)
+connect case score metadata to the bounded LangGraph workflow, persist completion records,
+and record immutable reviewer decisions. The workflow abstains and makes no enforcement
+decisions. External providers and multi-user reviewer assignment remain targets.
+
 October 17 implementation: [API monitoring](OBSERVABILITY.md) now includes authenticated
 Prometheus metrics, alert rules and a provisioned Grafana dashboard. The local container
 assessment passed scraping, alert firing, latency samples and dashboard checks, then

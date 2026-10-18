@@ -139,3 +139,35 @@ class InvestigationView(Contract):
     status: Literal["awaiting_review"]
     requires_human_review: Literal[True] = True
     created_at: datetime
+
+
+class InvestigationRunCreate(Contract):
+    query: Annotated[str, Field(min_length=1, max_length=2000, pattern=r"\S")]
+    score_ids: Annotated[list[UUID], Field(max_length=20)]
+
+    @model_validator(mode="after")
+    def unique_scores(self) -> Self:
+        if len(set(self.score_ids)) != len(self.score_ids):
+            raise ValueError("Duplicate score references")
+        return self
+
+
+class InvestigationRunView(Contract):
+    id: UUID
+    case_id: UUID
+    investigation_id: UUID
+    workflow_version: str
+    scores: Annotated[list[CaseScoreView], Field(max_length=20)]
+    created_at: datetime
+
+
+class ReviewCreate(Contract):
+    decision: Literal["approve", "reject", "request_changes"]
+    rationale: Annotated[str, Field(min_length=1, max_length=2000, pattern=r"\S")]
+
+
+class ReviewView(ReviewCreate):
+    id: UUID
+    investigation_id: UUID
+    actor_id: str
+    created_at: datetime

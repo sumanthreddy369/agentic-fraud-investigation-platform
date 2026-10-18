@@ -36,9 +36,9 @@ external execution. Checkpoint files are private and are excluded from Git.
 
 ## Integration work
 
-Authenticated API scheduling, PostgreSQL checkpoint operations, live Bedrock drafting,
-MCP transport, retrieval indexing, reviewer decision endpoints and AWS deployment
-remain Target (not built yet). Do not expose this local runner directly as a shared
-service or accept checkpoint IDs and actor identities from model output.
+The [authenticated API](INVESTIGATION_API.md) now runs a bounded score-metadata workflow
+and stores completion records and human decisions. PostgreSQL in-flight checkpoints,
+live Bedrock drafting, MCP transport, retrieval indexing and AWS deployment remain
+Target (not built yet). Do not accept actor identities from model output.
 
 The checkpoint integration follows [LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence).

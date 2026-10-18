@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     model_cooldown_seconds: float = Field(default=30, gt=0, le=300)
     scoring_enabled: bool = True
     writes_enabled: bool = True
+    investigations_enabled: bool = False
     docs_enabled: bool = True
     allowed_hosts: list[str] = ["localhost", "127.0.0.1", "[::1]", "test"]
     # Fail closed: shared environments need an OIDC implementation in a later increment.
