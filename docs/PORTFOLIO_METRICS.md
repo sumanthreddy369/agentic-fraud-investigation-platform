@@ -56,7 +56,8 @@ SLA, or reduction in human work has been established.
 
 The replay repeated ten golden payloads six times. Its observed 30.21 requests/second
 over 1.99 seconds is not a sustained throughput or AWS performance guarantee.
-LangGraph, MCP and external model-provider integrations remain targets.
+The LangGraph investigation API and immutable human-review records are implemented.
+MCP and external model-provider integrations are next milestones.
 
 ## Evidence
 

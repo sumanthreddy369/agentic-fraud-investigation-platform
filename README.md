@@ -1,35 +1,37 @@
 # Agentic Fraud Investigation Platform
 
-October 17: [authenticated API metrics, Prometheus alerts and Grafana](docs/OBSERVABILITY.md)
-now have a reproducible local demonstration. A [bounded LangGraph workflow](docs/INVESTIGATION_WORKFLOW.md)
-has local checkpoint and policy tests. Live Bedrock drafting, MCP transport and AWS
-application deployment are not integrated yet.
+**Fraud scoring, bounded investigations, and auditable human review.**
 
-[Latest status, model comparison, code and tech stack](docs/PROJECT_STATUS_AND_STACK.md)
+An ML platform engineering portfolio built around 590,540 IEEE-CIS transactions:
+Python model development, ONNX inference, a guarded FastAPI service, PostgreSQL
+provenance, and a LangGraph workflow that prepares cases for human review.
 
-[Milestone screenshots and result figures](docs/MILESTONE_GALLERY.md)
+![Implemented scoring and investigation workflow](docs/images/portfolio/01-workflow.png)
 
-[Current delivery workflow and completion gates](docs/DELIVERY_WORKFLOW.md) covers the stronger model, temporary AWS assessment, and investigation agents.
+## Results at a glance
 
-[EDA and model comparison](docs/FULL_EDA_COMPARISON.md) includes analysis coverage, model
-selection rationale, comparison tables, per-column blank counts, and measured tests.
+| Engineering outcome | Result |
+| --- | --- |
+| Fraud model | 0.8716 ROC-AUC and 0.4401 average precision on 118,108 retrospective audit rows |
+| ONNX fidelity | Maximum absolute score difference of 3.37e-7 across 118,108 records |
+| Local serving replay | 60/60 requests across three Docker replicas; HTTP p95 117.82 ms |
+| Regression suite | 192 tests passed, 1 skipped with disposable PostgreSQL |
+| Investigation controls | Case-scoped score metadata, replay-safe completion, immutable human decisions |
 
-This repository provides a guarded FastAPI service around the existing IEEE-CIS, Home Credit, and Elliptic risk model boundaries. It stores investigation cases and model-score provenance in PostgreSQL, supports validated ONNX inference, and defines a policy layer for future agent-driven investigations.
+The performance figures describe retrospective evaluation and bounded local replay.
+The investigation workflow abstains until a human reviews the case; it does not perform enforcement.
 
-**Status:** In development. The API, persistence, guardrails, and ONNX adapter are implemented. External agents, retrieval, graph services, AWS deployment, and human-review workflows remain targets.
+**Built stack:** Python · scikit-learn · ONNX Runtime · FastAPI · PostgreSQL · LangGraph ·
+Docker · local Kubernetes · Terraform · GitHub Actions · Prometheus · Grafana.
 
-**Updated portfolio plan:** demonstrate ML Platform Engineering and AI Infrastructure
-Engineering through versioned fraud/risk models, Kubernetes scheduling/scaling/recovery,
-MLflow + Airflow model lifecycle and pipelines, Terraform + CI/CD provisioning and
-releases, and Prometheus + Grafana monitoring. Local Kubernetes/Terraform lifecycle proof, trained ONNX baselines and CI checks are
-verified. MLflow, Airflow, monitoring dashboards, AWS serving and live agents are
-**Target (not built yet)**. See the
-[updated architecture plan](docs/AWS_TARGET_ARCHITECTURE.md#updated-portfolio-plan--october-11-2026).
+**Next milestones:** AWS EKS serving and deployment assessment, Amazon Bedrock and MCP
+integration, governed retrieval, MLflow and Airflow pipelines, and OpenTelemetry tracing.
 
-[Public repository](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform) | [CI runs](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform/actions)
-
-[Build journal and milestone screenshots](docs/BUILD_JOURNAL.md) tracks current work,
-verification, blockers, and the path to the final investigation-agent workflows.
+[Recruiter showcase and downloadable images](docs/PORTFOLIO_SHOWCASE.md) ·
+[Model comparison](docs/FULL_EDA_COMPARISON.md) ·
+[Investigation API](docs/INVESTIGATION_API.md) ·
+[Metrics explained](docs/PORTFOLIO_METRICS.md) ·
+[CI runs](https://github.com/sumanthreddy369/agentic-fraud-investigation-platform/actions)
 
 ---
 
