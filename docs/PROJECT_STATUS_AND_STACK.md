@@ -1,5 +1,10 @@
 # Project status, models and technology stack
 
+October 23 assessment: [the real-model investigation demonstration](MODEL_INVESTIGATION_DEMO.md)
+passed 10 golden predictions, 10 investigation completions, 10 scripted reviews, 10 restart
+replays and 40 expected audit events. It uses local ASGI transport and SQLite. The Dockerfile
+now offers an explicit agents dependency option; its container build remains to be qualified.
+
 October 18 implementation: [investigation execution and human review](INVESTIGATION_API.md)
 connect case score metadata to the bounded LangGraph workflow, persist completion records,
 and record immutable reviewer decisions. The workflow abstains and makes no enforcement

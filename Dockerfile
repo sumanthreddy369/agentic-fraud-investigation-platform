@@ -5,7 +5,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_PROJECT_ENVIRONMENT=/opt/ven
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY src ./src
-RUN uv sync --frozen --no-dev --extra onnx-cpu --no-cache \
+ARG INSTALL_AGENTS=false
+RUN case "$INSTALL_AGENTS" in \
+      true) uv sync --frozen --no-dev --extra onnx-cpu --extra agents --no-cache ;; \
+      false) uv sync --frozen --no-dev --extra onnx-cpu --no-cache ;; \
+      *) echo "INSTALL_AGENTS must be true or false" >&2; exit 1 ;; \
+    esac \
     && useradd --uid 10001 --create-home risk
 COPY alembic.ini ./
 COPY migrations ./migrations

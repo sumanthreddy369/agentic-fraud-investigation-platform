@@ -13,9 +13,14 @@ $env:RISK_INVESTIGATIONS_ENABLED = "true"
 uv run risk-platform
 ```
 
-The default container does not install the agents extra. Enable execution only with
-that extra installed; an absent dependency returns a generic 503. Schema readiness
+The default container does not install the agents extra. Build with
+`docker build --build-arg INSTALL_AGENTS=true -t risk-platform:investigations .`
+to include it. This image variant still requires container qualification before deployment.
+Enable execution only with that extra installed; an absent dependency returns a generic 503. Schema readiness
 requires `0005_reviews_runs`.
+
+[Model-to-review demonstration](MODEL_INVESTIGATION_DEMO.md) exercises the existing ONNX model
+with persisted investigations, scripted review decisions and completed-run replay.
 
 ## API sequence
 
