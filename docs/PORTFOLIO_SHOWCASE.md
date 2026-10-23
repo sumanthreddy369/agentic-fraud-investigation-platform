@@ -67,4 +67,6 @@ separate ONNX and Docker serving evidence.
 
 These images are architecture and results graphics, not screenshots of deployed services.
 Their source is [the rendering script](../scripts/render_portfolio_images.py).
-All three PNGs are 1600 × 1000 and can be reused in a GitHub profile, portfolio, or presentation.
+The PNGs can be reused in a GitHub profile, portfolio, or presentation. The clean versions
+omit date stamps and footer text. A [simple six-step workflow](images/portfolio/simple-workflow.png)
+is also available as [JPG](images/portfolio/simple-workflow.jpg).

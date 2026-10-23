@@ -20,14 +20,6 @@ def page(label, title, subtitle):
     draw.text((64, 40), label.upper(), font=font(20, True), fill=TEAL)
     draw.text((64, 84), title, font=font(49, True), fill=INK)
     draw.text((64, 155), subtitle, font=font(24), fill=MUTED)
-    draw.line((64, 924, 1536, 924), fill="#30415a", width=2)
-    draw.text(
-        (64, 947),
-        "FRAUD INVESTIGATION PLATFORM  /  ENGINEERING PORTFOLIO",
-        font=font(18, True),
-        fill=MUTED,
-    )
-    draw.text((1230, 947), "PORTFOLIO  •  OCT 2026", font=font(18), fill=MUTED)
     return image, draw
 
 
@@ -98,20 +90,7 @@ def workflow():
             "Completed-run replay • append-only PostgreSQL records",
         ],
     )
-    draw.text(
-        (64, 830),
-        "Built scope: local platform and API integration. "
-        "AWS serving is the next deployment milestone.",
-        font=font(23),
-        fill=MUTED,
-    )
-    draw.text(
-        (64, 866),
-        "The automated workflow currently returns insufficient_evidence; "
-        "a model score alone does not establish fraud.",
-        font=font(22),
-        fill=MUTED,
-    )
+    image = image.crop((0, 0, 1600, 830))
     image.save(OUT / "01-workflow.png")
 
 
@@ -159,13 +138,7 @@ def results():
         font=font(23),
         fill=INK,
     )
-    draw.text(
-        (64, 871),
-        "Retrospective model audit and short local replay; "
-        "these figures are not a production SLA or AWS benchmark.",
-        font=font(21),
-        fill=MUTED,
-    )
+    image = image.crop((0, 0, 1600, 880))
     image.save(OUT / "02-results.png")
 
 
@@ -225,13 +198,7 @@ def roadmap():
         ],
         accent="#f8c66a",
     )
-    draw.text(
-        (64, 876),
-        "Next milestones describe the intended architecture; "
-        "the Built column describes implemented capabilities.",
-        font=font(22),
-        fill=MUTED,
-    )
+    image = image.crop((0, 0, 1600, 895))
     image.save(OUT / "03-roadmap.png")
 
 
