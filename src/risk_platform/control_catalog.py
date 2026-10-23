@@ -30,11 +30,16 @@ def control_catalog(settings: Settings) -> dict:
             "postgres_append_only_scores",
             "idempotent_case_evidence_references",
             "postgres_append_only_evidence",
+            "immutable_investigation_submissions",
+            "case_scoped_evidence_snapshots",
+            "idempotent_workflow_completion_records",
+            "append_only_human_review_decisions",
+            "investigation_abstention_without_evidence",
             "validated_model_output",
             "model_timeout",
             "model_circuit_breaker",
         ],
-        "tested_policy_library_not_yet_connected_to_agent_runtime": [
+        "bounded_investigation_policy": [
             "read_only_tool_allowlist",
             "case_scoped_evidence",
             "tool_call_and_time_budgets",
@@ -47,13 +52,13 @@ def control_catalog(settings: Settings) -> dict:
             "classified_approved_evidence_only",
             "basic_sensitive_content_screen",
         ],
-        "deployment_or_integration_pending": [
+        "deployment_or_integration_targets": [
             "oidc_msal_mfa",
             "multi_user_role_assignment",
             "postgres_row_level_security",
             "distributed_quotas",
-            "durable_langgraph_review_state",
-            "retrieval_acl_filters",
+            "distributed_langgraph_inflight_recovery",
+            "external_retrieval_acl_filters",
             "bedrock_content_controls",
             "token_and_cost_budgets",
             "model_drift_monitoring",
@@ -75,6 +80,7 @@ def control_catalog(settings: Settings) -> dict:
         "switches": {
             "case_writes": settings.writes_enabled,
             "model_scoring": settings.scoring_enabled,
+            "investigation_execution": settings.investigations_enabled,
         },
         "limitations": [
             "In-process counters reset on restart and are not shared between workers.",

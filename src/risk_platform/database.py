@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     DateTime,
     Float,
@@ -106,6 +107,63 @@ class EvidenceReference(Base):
     source_id: Mapped[str] = mapped_column(String(200))
     source_version: Mapped[str] = mapped_column(String(128))
     content_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+
+class InvestigationRecord(Base):
+    __tablename__ = "investigation_records"
+    __table_args__ = (
+        UniqueConstraint("case_id", "idempotency_key"),
+        CheckConstraint("status = 'awaiting_review'", name="ck_investigation_pending"),
+        CheckConstraint(
+            "disposition IN ('escalate', 'no_further_action', 'insufficient_evidence')",
+            name="ck_investigation_disposition",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id"), index=True)
+    actor_id: Mapped[str] = mapped_column(String(200))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    disposition: Mapped[str] = mapped_column(String(30))
+    summary: Mapped[str] = mapped_column(String(4000))
+    # Server-built snapshot of immutable references, not client-provided source content.
+    evidence: Mapped[list[dict]] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(30), default="awaiting_review")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+
+class InvestigationRun(Base):
+    __tablename__ = "investigation_runs"
+    __table_args__ = (UniqueConstraint("case_id", "idempotency_key"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id"), index=True)
+    investigation_id: Mapped[UUID] = mapped_column(ForeignKey("investigation_records.id"))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    workflow_version: Mapped[str] = mapped_column(String(80))
+    scores: Mapped[list[dict]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
+
+
+class InvestigationReview(Base):
+    __tablename__ = "investigation_reviews"
+    __table_args__ = (
+        UniqueConstraint("investigation_id"),
+        CheckConstraint(
+            "decision IN ('approve', 'reject', 'request_changes')", name="ck_review_decision"
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    investigation_id: Mapped[UUID] = mapped_column(ForeignKey("investigation_records.id"))
+    actor_id: Mapped[str] = mapped_column(String(200))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(30))
+    rationale: Mapped[str] = mapped_column(String(2000))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utc_now)
 
 

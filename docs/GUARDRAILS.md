@@ -10,7 +10,7 @@ This project demonstrates defense in depth for a fraud investigation service. Th
 | --- | --- | --- |
 | Anonymous access | Bearer authentication for all `/v1` routes; empty configuration denies access; constant-time byte comparison | Authentication tests. Health and optional documentation remain public on loopback. |
 | Privilege escalation | Server-configured investigator, reviewer, and auditor permission sets; client role headers do not grant permissions | `test_read_only_roles_and_spoofed_role_header`. This is local role simulation, not enterprise user provisioning. |
-| Other users' cases | Owner filters on reads, listings, audit retrieval and idempotency scope; inaccessible objects return 404 | Existing ownership tests. Multi-user OIDC and PostgreSQL RLS remain pending. |
+| Other users' cases | Owner filters on reads, listings, audit retrieval and idempotency scope; inaccessible objects return 404 | Existing ownership tests. Multi-user OIDC and PostgreSQL RLS remain incomplete. |
 | Cross-domain access | Server-configured allowed domains filter case/model APIs; empty set grants none | `test_domain_restriction_hides_existing_case_and_audit`. No inferred cross-dataset joins. |
 | Accidental mass assignment | Pydantic rejects unknown fields, invalid domains, and malformed source identifiers | Existing API contract tests. |
 | Huge / malformed payloads | 64 KiB actual body-byte limit, 16 KiB header limit, JSON-only write routes, compressed-body rejection, ambiguous framing rejection | Declared, understated and streamed body tests. Header bytes are checked after the HTTP server has parsed them; edge limits remain necessary. |
@@ -18,7 +18,7 @@ This project demonstrates defense in depth for a fraud investigation service. Th
 | Request flooding | 120 requests/minute/peer, fixed windows, bounded 1,024-client map; spoofed forwarding headers ignored | Rate-limit tests. Process-local counters reset on restart; boundary bursts and NAT sharing are expected. Not a distributed quota or DDoS defense. |
 | Host-header abuse | Explicit host allowlist; launcher does not trust forwarded client addresses | Untrusted-host test. No permissive CORS policy is configured. |
 | Sensitive errors | Validation errors omit raw input/context; unexpected and database errors return generic details | Secret-marker test checks responses and platform logs. |
-| Sensitive telemetry | Structured allowlisted JSON events include generated request ID, route template, status and duration; omit bodies, tokens, query strings and raw exception messages | Log-redaction test. Uvicorn access logging is disabled in the supported launcher. Centralized logging is pending. |
+| Sensitive telemetry | Structured allowlisted JSON events include generated request ID, route template, status and duration; omit bodies, tokens, query strings and raw exception messages | Log-redaction test. Uvicorn access logging is disabled in the supported launcher. Centralized logging is not complete. |
 | Browser caching / embedding | `no-store`, `nosniff`, frame denial, no-referrer; API responses use restrictive CSP | Header tests, including denied requests. No HSTS is claimed over local HTTP. |
 | Excessive list queries | Bounded case pagination, maximum offset, and bounded audit pages | Contract validation; use audit `limit`/`offset` to continue reading history. |
 | Duplicate writes | Owner-scoped idempotency keys; conflicting payloads return 409; one transaction creates case and audit record | PostgreSQL test races six submissions and verifies a single case/audit event. |
@@ -27,7 +27,7 @@ This project demonstrates defense in depth for a fraud investigation service. Th
 | Missing model artifacts | All three models remain unavailable until their authoritative contracts/artifacts are recovered | Availability tests; no synthetic fallback scores. |
 | Malformed model inputs/outputs | Bounded feature keys/count/strings, strict scalar values, finite probability in [0,1], domain/schema match, nonempty model/version/class metadata | Fake-adapter adversarial tests. Training-feature parity, calibration and drift cannot be verified without original models. |
 | Slow / failing model | 5-second async timeout, one concurrent call/domain, circuit opens after three failures, 30-second cooldown then one recovery probe; no automatic scoring retries | Timeout/recovery tests. Async cancellation requires cooperative adapters; CPU-bound models need isolated worker processes. |
-| Emergency containment | Configuration disables case writes or scoring; reads remain available; documentation can be disabled | Kill-switch tests. Environment changes require restart; distributed operational kill switches are pending. |
+| Emergency containment | Configuration disables case writes or scoring; reads remain available; documentation can be disabled | Kill-switch tests. Environment changes require restart; distributed operational kill switches are not implemented. |
 
 ## Agent, retrieval and AI controls
 
@@ -52,8 +52,8 @@ Implemented in `agent_policy.py`, verified with synthetic tools. These controls 
 | Excessive agency / unknown tools | Deny by default; only explicitly registered `get_case_evidence`, `search_policy`, and `get_graph_neighborhood` tools can run | No shell, arbitrary SQL, arbitrary URL fetch, account block, payment, loan approval, or self-approval tool. |
 | Tool argument injection | Typed bounded arguments reject extra fields; case, domain and identity come from trusted server context | Never construct this context from LLM-provided claims. Retrieval implementations must also apply authorization before searching. |
 | Cross-case evidence leakage | Returned evidence must match authorized case, domain and owner; reject the entire batch on mismatch | Bedrock Knowledge Bases or alternative retrieval metadata filters are not yet integrated. |
-| Runaway ReAct loops | Five tool calls/run, 30-second run budget, five-second tool deadline, no parallel tool calls, failed calls spend budget | Counters are in-memory. Durable distributed budgets and actual Bedrock token/cost accounting are pending. |
-| Excessive evidence / poisoned IDs | Bounded excerpts and cumulative evidence counts; reject same-ID/different-content collisions | Ingestion signing, provenance checks, malware scanning, and source deletion propagation are pending. |
+| Runaway ReAct loops | Five tool calls/run, 30-second run budget, five-second tool deadline, no parallel tool calls, failed calls spend budget | Counters are in-memory. Durable distributed budgets and actual Bedrock token/cost accounting are not implemented. |
+| Excessive evidence / poisoned IDs | Bounded excerpts and cumulative evidence counts; reject same-ID/different-content collisions | Ingestion signing, provenance checks, malware scanning, and source deletion propagation are not implemented. |
 | Fabricated citations | Recommendations may reference only collected evidence IDs; duplicate/unknown citations are rejected | A valid citation establishes provenance, not entailment or truth. Semantic groundedness evaluation is still required. |
 | Unsupported conclusions | Empty evidence only permits an `insufficient_evidence` recommendation | Fraud labels and risk scores remain outputs of verified models, not invented LLM probabilities. |
 | Autonomous consequential action | Every accepted recommendation is a review packet with `requires_human_review=true`; no approval or action executor exists | This is not yet a durable analyst workflow. Add authenticated reviewer separation, evidence-version binding, expiry, replay protection and atomic decision transitions before enabling actions. |
@@ -92,7 +92,7 @@ uv run python scripts/demo_guardrails.py
 
 The report separates live API checks from policy-library checks and exits nonzero on failure. `docs/GUARDRAIL_DEMO_REPORT.json` is a captured example from the verified run; rerun to regenerate evidence.
 
-With the local service running, authenticated `GET /v1/guardrails` lists active controls, limits, integration-only policies, and pending deployment work. Use `/docs` to demonstrate 401, 403, 413, 429, and the model-unavailable response with synthetic inputs.
+With the local service running, authenticated `GET /v1/guardrails` lists active controls, limits, integration-only policies, and remaining deployment work. Use `/docs` to demonstrate 401, 403, 413, 429, and the model-unavailable response with synthetic inputs.
 
 Run the full adversarial suite and actual PostgreSQL audit/concurrency checks:
 

@@ -15,6 +15,7 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0.38,<2.1",
   "psycopg[binary]>=3.2,<4",
   "alembic>=1.14,<2",
+  "prometheus-client>=0.21,<1",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +27,16 @@ onnx-openvino = [
   "numpy>=1.26,<3",
   "onnxruntime-openvino==1.24.1",
   "openvino==2025.4.1; sys_platform == 'win32'",
+]
+training = [
+    "matplotlib>=3.9,<4",
+    "pandas>=2.2,<3",
+    "scikit-learn>=1.6,<2",
+    "skl2onnx>=1.18,<2",
+]
+agents = [
+    "langgraph>=1,<2",
+    "langgraph-checkpoint-sqlite>=3,<4",
 ]
 
 [project.scripts]

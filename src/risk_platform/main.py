@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from risk_platform.adapters import ModelRegistry, ModelUnavailable
+from risk_platform.agent_policy import PolicyDenied
 from risk_platform.authorization import require_permission
 from risk_platform.config import Settings
 from risk_platform.contracts import (
@@ -24,16 +25,29 @@ from risk_platform.contracts import (
     Domain,
     EvidenceCreate,
     EvidenceView,
+    InvestigationCreate,
+    InvestigationRunCreate,
+    InvestigationRunView,
+    InvestigationView,
     ModelAvailability,
+    ReviewCreate,
+    ReviewView,
     ScoreRequest,
     ScoreResult,
 )
 from risk_platform.control_catalog import control_catalog
 from risk_platform.database import make_engine, make_sessions
 from risk_platform.http_guardrails import GuardrailMiddleware
+from risk_platform.metrics import HttpMetrics
 from risk_platform.onnx_adapter import load_onnx_adapters
 from risk_platform.scoring import ScoringFailure, ScoringGateway
-from risk_platform.service import CaseNotFound, CaseService, DomainDenied, IdempotencyConflict
+from risk_platform.service import (
+    CaseNotFound,
+    CaseService,
+    DomainDenied,
+    EvidenceUnavailable,
+    IdempotencyConflict,
+)
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -99,8 +113,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.models = ModelRegistry(load_onnx_adapters(configuration.onnx_manifests))
 
     app.state.scoring = ScoringGateway(app.state.models, configuration)
+    app.state.metrics = HttpMetrics()
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=configuration.allowed_hosts)
-    app.add_middleware(GuardrailMiddleware, settings=configuration)
+    app.add_middleware(GuardrailMiddleware, settings=configuration, metrics=app.state.metrics)
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics(
+        credential: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+    ):
+        if not configuration.metrics_enabled:
+            raise HTTPException(404, "Not found")
+        token = configuration.metrics_token.get_secret_value()
+        if not token:
+            raise HTTPException(503, "Metrics access is not configured")
+        if credential is None or not secrets.compare_digest(
+            credential.credentials.encode(), token.encode()
+        ):
+            raise HTTPException(401, "Invalid credentials")
+        return Response(
+            content=app.state.metrics.render(),
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, error: RequestValidationError):
@@ -138,7 +171,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def ready(database_session: Annotated[AsyncSession, Depends(session)]):
         # A socket check alone would report ready before migrations have been applied.
         revision = await database_session.scalar(text("SELECT version_num FROM alembic_version"))
-        if revision != "0003_evidence":
+        if revision != "0005_reviews_runs":
             raise HTTPException(503, "Database schema is not current")
         await database_session.execute(text("SELECT id FROM cases LIMIT 0"))
         return {
@@ -322,5 +355,122 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             EvidenceView.model_validate(record, from_attributes=True)
             for record in await cases.list_evidence(case_id, limit, offset)
         ]
+
+    @app.post(
+        "/v1/cases/{case_id}/investigations",
+        response_model=InvestigationView,
+        status_code=201,
+        dependencies=[Depends(require_permission("investigations:create", actor))],
+    )
+    async def submit_investigation(
+        case_id: UUID,
+        payload: InvestigationCreate,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        try:
+            record, created = await cases.submit_investigation(case_id, payload, idempotency_key)
+        except IdempotencyConflict:
+            raise HTTPException(
+                409, "Idempotency key was already used for a different request"
+            ) from None
+        except EvidenceUnavailable:
+            raise HTTPException(422, "Evidence references are unavailable for this case") from None
+        response.status_code = 201 if created else 200
+        return InvestigationView.model_validate(record, from_attributes=True)
+
+    @app.get(
+        "/v1/investigations/{investigation_id}",
+        response_model=InvestigationView,
+        dependencies=[Depends(require_permission("cases:read", actor))],
+    )
+    async def get_investigation(
+        investigation_id: UUID, cases: Annotated[CaseService, Depends(service)]
+    ):
+        record = await cases.get_investigation(investigation_id)
+        if record is None:
+            raise HTTPException(404, "Investigation not found")
+        return InvestigationView.model_validate(record, from_attributes=True)
+
+    @app.get(
+        "/v1/cases/{case_id}/investigations",
+        response_model=list[InvestigationView],
+        dependencies=[Depends(require_permission("cases:read", actor))],
+    )
+    async def list_investigations(
+        case_id: UUID,
+        cases: Annotated[CaseService, Depends(service)],
+        limit: Annotated[int, Query(ge=1, le=25)] = 10,
+        offset: Annotated[int, Query(ge=0, le=10000)] = 0,
+    ):
+        return [
+            InvestigationView.model_validate(record, from_attributes=True)
+            for record in await cases.list_investigations(case_id, limit, offset)
+        ]
+
+    @app.post(
+        "/v1/cases/{case_id}/investigation-runs",
+        response_model=InvestigationRunView,
+        status_code=201,
+        dependencies=[Depends(require_permission("investigations:create", actor))],
+    )
+    async def run_investigation(
+        case_id: UUID,
+        payload: InvestigationRunCreate,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        if not configuration.investigations_enabled:
+            raise HTTPException(503, "Investigation execution is disabled")
+        try:
+            record, created = await cases.run_investigation(case_id, payload, idempotency_key)
+        except IdempotencyConflict:
+            raise HTTPException(
+                409, "Investigation request conflicts with an existing run"
+            ) from None
+        except EvidenceUnavailable:
+            raise HTTPException(422, "Score references are unavailable for this case") from None
+        except (ImportError, PolicyDenied, TimeoutError):
+            raise HTTPException(503, "Investigation execution unavailable") from None
+        response.status_code = 201 if created else 200
+        return InvestigationRunView.model_validate(record, from_attributes=True)
+
+    @app.post(
+        "/v1/investigations/{investigation_id}/review",
+        response_model=ReviewView,
+        status_code=201,
+        dependencies=[Depends(require_permission("reviews:create", actor))],
+    )
+    async def review_investigation(
+        investigation_id: UUID,
+        payload: ReviewCreate,
+        response: Response,
+        cases: Annotated[CaseService, Depends(service)],
+        idempotency_key: Annotated[str, Header(min_length=1, max_length=128, pattern=r"^[!-~]+$")],
+    ):
+        try:
+            record, created = await cases.review_investigation(
+                investigation_id, payload, idempotency_key
+            )
+        except IdempotencyConflict:
+            raise HTTPException(409, "Investigation already has a review") from None
+        response.status_code = 201 if created else 200
+        return ReviewView.model_validate(record, from_attributes=True)
+
+    @app.get(
+        "/v1/investigations/{investigation_id}/review",
+        response_model=ReviewView,
+        dependencies=[Depends(require_permission("cases:read", actor))],
+    )
+    async def get_review(
+        investigation_id: UUID,
+        cases: Annotated[CaseService, Depends(service)],
+    ):
+        record = await cases.get_review(investigation_id)
+        if record is None:
+            raise HTTPException(404, "Review not found")
+        return ReviewView.model_validate(record, from_attributes=True)
 
     return app

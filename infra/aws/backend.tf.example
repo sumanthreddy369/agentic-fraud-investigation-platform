@@ -1,0 +1,6 @@
+# Copy to backend.tf only after verifying the existing private bucket's
+# encryption, versioning, public-access block, and deployer access.
+# Keep applied state out of CloudShell /tmp and out of Git.
+terraform {
+  backend "s3" {}
+}

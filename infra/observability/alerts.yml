@@ -1,0 +1,24 @@
+groups:
+  - name: risk-api
+    rules:
+      - alert: RiskApiUnavailable
+        expr: up{job="risk-api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: Risk API metrics target cannot be scraped
+      - alert: RiskApiServerErrors
+        expr: sum(increase(risk_http_requests_total{status=~"5.."}[2m])) > 0
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: Risk API returned a server error
+      - alert: RiskApiAccessDenied
+        expr: sum(increase(risk_http_requests_total{status="401"}[2m])) >= 3
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: Repeated unauthenticated requests to Risk API
